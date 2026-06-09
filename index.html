@@ -654,6 +654,7 @@
     $("meEmail").textContent = email;
     $("portalFoot").style.display = "block";
     $("signOutLink").onclick = async (e)=>{ e.preventDefault(); await sb.auth.signOut(); location.reload(); };
+    try{ sb.from("visits").insert({ client_id:data.id, email:email }); }catch(e){}
   }
 
   /* register the app service worker so clients can add it to their home screen */
