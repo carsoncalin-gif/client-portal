@@ -156,6 +156,10 @@
   .action-btn .ic{flex:none;width:30px;height:30px;border-radius:8px;background:var(--teal-wash);display:grid;place-items:center;color:var(--teal-deep)}
   @media(max-width:560px){ .actions{grid-template-columns:1fr} }
 
+  /* portal footer / sign out */
+  .portal-foot{text-align:center;color:var(--ink-soft);font-size:12.5px;margin:34px 0 10px}
+  .portal-foot a{color:var(--teal-deep);font-weight:600;cursor:pointer}
+
   /* closed view */
   #equityView{display:none}
   .celebrate{background:linear-gradient(135deg,var(--ink),#0a7a87);color:#fff;border-radius:20px;
@@ -315,6 +319,8 @@
       <div class="section-h">Get in touch</div>
       <div class="actions" id="actions"></div>
     </div>
+
+    <div class="portal-foot" id="portalFoot" style="display:none">Signed in as <span id="meEmail"></span> &middot; <a href="#" id="signOutLink">Sign out</a></div>
   </div>
 
 <!-- Supabase client (used only when you add your keys below) -->
@@ -645,6 +651,9 @@
     }
     renderPortal(data);
     loadUpdates(sb);
+    $("meEmail").textContent = email;
+    $("portalFoot").style.display = "block";
+    $("signOutLink").onclick = async (e)=>{ e.preventDefault(); await sb.auth.signOut(); location.reload(); };
   }
 
   /* register the app service worker so clients can add it to their home screen */
