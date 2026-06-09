@@ -129,6 +129,11 @@
   .update-card .date{font-size:11.5px;color:var(--ink-soft);letter-spacing:.04em;text-transform:uppercase;margin-top:3px}
   .update-card p{font-size:14px;color:var(--ink-soft);line-height:1.5;margin-top:9px;white-space:pre-wrap}
 
+  /* deal switcher (clients doing both buy + sell) */
+  .dealswitch{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
+  .dealswitch button{border:1px solid var(--line);background:var(--card);font-family:inherit;font-weight:600;font-size:12.5px;color:var(--ink-soft);padding:8px 13px;border-radius:999px;cursor:pointer;transition:.15s}
+  .dealswitch button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+
   /* page tabs */
   .tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px;margin:16px 0 6px;box-shadow:var(--shadow)}
   .tab{flex:1;border:0;background:transparent;font-family:inherit;font-weight:600;font-size:13.5px;color:var(--ink-soft);padding:11px;border-radius:10px;cursor:pointer;transition:.18s}
@@ -235,6 +240,8 @@
       </div>
       <a class="msg-btn" href="sms:+13179035973">Message Carson</a>
     </div>
+
+    <div class="dealswitch" id="dealSwitch" style="display:none"></div>
 
     <div class="tabs" id="tabs">
       <button type="button" class="tab active" data-page="pageHome">Your Home</button>
@@ -608,6 +615,22 @@
     });
   }
 
+  let myDeals=[];
+  function renderSwitcher(activeIdx){
+    const sw=$("dealSwitch");
+    if(!myDeals || myDeals.length<2){ sw.style.display="none"; return; }
+    sw.innerHTML="";
+    myDeals.forEach((d,i)=>{
+      const b=document.createElement("button"); if(i===activeIdx) b.className="active";
+      const verb = d.role==="seller" ? "Selling" : "Buying";
+      const addr = d.property_address || (d.role==="seller" ? "your sale" : "your purchase");
+      b.textContent = verb+" · "+addr;
+      b.onclick=()=>{ renderSwitcher(i); renderPortal(d); window.scrollTo({top:0,behavior:"smooth"}); };
+      sw.appendChild(b);
+    });
+    sw.style.display="flex";
+  }
+
   /* ---------------- boot ---------------- */
   async function boot(){
     if(!configured){ renderPortal(DEMO); renderUpdates(SAMPLE_UPDATES); return; }
@@ -647,17 +670,20 @@
     }
 
     const email = session.user.email;
-    const { data, error } = await sb.from("clients").select("*").or("email.ilike."+email+",email2.ilike."+email).maybeSingle();
-    if(error || !data){
+    const { data, error } = await sb.from("clients").select("*").or("email.ilike."+email+",email2.ilike."+email).order("created_at",{ascending:true});
+    const rows = data || [];
+    if(error || !rows.length){
       $("loadingView").textContent = "We could not find a transaction tied to this email yet. Reach out to Carson and he will get you set up.";
       show("loadingView"); return;
     }
-    renderPortal(data);
+    myDeals = rows;
+    renderSwitcher(0);
+    renderPortal(rows[0]);
     loadUpdates(sb);
     $("meEmail").textContent = email;
     $("portalFoot").style.display = "block";
     $("signOutLink").onclick = async (e)=>{ e.preventDefault(); await sb.auth.signOut(); location.reload(); };
-    try{ sb.from("visits").insert({ client_id:data.id, email:email }); }catch(e){}
+    try{ rows.forEach(r=>sb.from("visits").insert({ client_id:r.id, email:email })); }catch(e){}
   }
 
   /* register the app service worker so clients can add it to their home screen */
