@@ -60,6 +60,9 @@
   .client-card .badge.closed{background:#eaf6ef;color:var(--green)}
   .client-card .adv{flex:none;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--teal-deep);font-size:17px;font-weight:700;margin-left:8px;cursor:pointer}
   .client-card .adv:hover{background:var(--teal-wash);border-color:var(--teal)}
+  .subtabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;margin:6px 0 14px}
+  .subtab{flex:1;border:0;background:transparent;font-family:inherit;font-weight:600;font-size:13px;color:var(--ink-soft);padding:9px;border-radius:9px;cursor:pointer}
+  .subtab.active{background:var(--ink);color:#fff}
   .empty{color:var(--ink-soft);font-size:14px;text-align:center;padding:40px 10px}
 
   /* editor */
@@ -145,6 +148,10 @@
       <!-- EDITOR -->
       <div id="editView">
         <button class="back" id="backBtn">&larr; Back to all clients</button>
+        <div class="subtabs" id="subTabs" style="display:none">
+          <button type="button" class="subtab active" data-sub="0">Buying</button>
+          <button type="button" class="subtab" data-sub="1">Selling</button>
+        </div>
 
         <div class="card">
           <h3>Person &amp; deal</h3>
@@ -152,7 +159,7 @@
           <div class="field"><label>Sign-in email</label><input id="f_email" type="email" placeholder="client@email.com"><div class="hint">The email they log in with. Each client only sees their own portal.</div></div>
           <div class="field"><label>Partner email (optional)</label><input id="f_email2" type="email" placeholder="spouse@email.com"><div class="hint">For couples — both people can log in and see this same portal.</div></div>
           <div class="row2">
-            <div class="field"><label>Side</label><select id="f_role"><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
+            <div class="field"><label>Side</label><select id="f_role"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="both">Buyer + Seller</option></select></div>
             <div class="field"><label>Status pill</label><input id="f_status" placeholder="Under contract"></div>
           </div>
           <div class="row2">
@@ -425,53 +432,108 @@
     $("docStatus").textContent = done ? done+" file"+(done>1?"s":"")+" added — tap Save." : "";
   }
 
+  let subDeals=[]; let activeSub=0;
+  function blankDeal(role){
+    return { role:role, status_label:"", current_index:0, phase:"active",
+      property_address:"", property_meta:"", property_price:"", price_label:"",
+      photos:[], key_dates:[], documents:[],
+      close_1:"", close_2:"", close_3:"", close_net:"", bar_value:"", loan_pct:70, own_pct:30 };
+  }
+  function dealFromRow(c, role){
+    return { role:role, status_label:c.status_label||"", current_index:c.current_index||0, phase:c.phase||"active",
+      property_address:c.property_address||"", property_meta:c.property_meta||"", property_price:c.property_price||"", price_label:c.price_label||"",
+      photos:c.photos||[], key_dates:c.key_dates||[], documents:c.documents||[],
+      close_1:c.close_1||"", close_2:c.close_2||"", close_3:c.close_3||"", close_net:c.close_net||"",
+      bar_value:c.bar_value||"", loan_pct:(c.loan_pct!=null?c.loan_pct:70), own_pct:(c.own_pct!=null?c.own_pct:30) };
+  }
+  function dealColumns(d){
+    return { role:d.role, status_label:d.status_label, current_index:d.current_index, phase:d.phase,
+      property_address:d.property_address, property_meta:d.property_meta, property_price:d.property_price, price_label:d.price_label,
+      photos:d.photos, key_dates:d.key_dates, documents:d.documents,
+      close_1:d.close_1, close_2:d.close_2, close_3:d.close_3, close_net:d.close_net,
+      bar_value:d.bar_value, loan_pct:d.loan_pct, own_pct:d.own_pct };
+  }
+  function dealToForm(d){
+    $("f_status").value=d.status_label||"";
+    $("f_phase").value=d.phase||"active";
+    fillStageOptions(d.role, d.current_index);
+    $("f_addr").value=d.property_address||"";
+    $("f_meta").value=d.property_meta||"";
+    $("f_price").value=d.property_price||"";
+    $("f_pricelbl").value=d.price_label||"";
+    rowSet("photoRows", PHOTO_F, (d.photos||[]).map(u=>({url:u}))); $("upStatus").textContent="";
+    rowSet("dateRows", DATE_F, d.key_dates||[]);
+    docDraft=(d.documents||[]).map(x=>Object.assign({},x)); renderDocList(); $("docStatus").textContent="";
+    $("f_c1").value=d.close_1||""; $("f_c2").value=d.close_2||""; $("f_c3").value=d.close_3||"";
+    $("f_cnet").value=d.close_net||""; $("f_bar").value=d.bar_value||"";
+    $("f_loanpct").value=(d.loan_pct!=null?d.loan_pct:70); $("f_ownpct").value=(d.own_pct!=null?d.own_pct:30);
+    applyCloseLabels(d.role);
+    $("closingCard").style.display = (d.phase==="closed") ? "block" : "none";
+  }
+  function formToDeal(role){
+    return { role:role, status_label:$("f_status").value.trim(), current_index:parseInt($("f_stage").value,10)||0, phase:$("f_phase").value,
+      property_address:$("f_addr").value.trim(), property_meta:$("f_meta").value.trim(), property_price:$("f_price").value.trim(), price_label:$("f_pricelbl").value.trim(),
+      photos:collectRows("photoRows").map(r=>r.url).filter(Boolean),
+      key_dates:collectRows("dateRows"),
+      documents:docDraft.map(d=>{ const o={label:(d.label||"").trim()}; if(d.path!==undefined){o.path=d.path;}else{o.url=(d.url||"").trim();} return o; }).filter(d=>d.path||d.url),
+      close_1:$("f_c1").value.trim(), close_2:$("f_c2").value.trim(), close_3:$("f_c3").value.trim(),
+      close_net:$("f_cnet").value.trim(), bar_value:$("f_bar").value.trim(),
+      loan_pct:parseInt($("f_loanpct").value,10)||0, own_pct:parseInt($("f_ownpct").value,10)||0 };
+  }
+  function applyMode(){
+    const both=$("f_role").value==="both";
+    $("subTabs").style.display = both ? "flex" : "none";
+    document.querySelectorAll("#subTabs .subtab").forEach((b,i)=>b.classList.toggle("active", i===activeSub));
+  }
+  function switchSub(i){
+    subDeals[activeSub]=formToDeal(subDeals[activeSub].role);
+    activeSub=i; applyMode();
+    dealToForm(subDeals[activeSub]);
+  }
+  function onSideChange(){
+    const v=$("f_role").value;
+    if(subDeals.length){ subDeals[activeSub]=formToDeal(subDeals[activeSub].role); }
+    if(v==="both"){
+      const buy=subDeals.find(d=>d.role==="buyer")||blankDeal("buyer");
+      const sell=subDeals.find(d=>d.role==="seller")||blankDeal("seller");
+      subDeals=[buy,sell]; activeSub=0;
+    } else {
+      let keep=subDeals.find(d=>d.role===v);
+      if(!keep){ keep=subDeals[activeSub]?Object.assign({},subDeals[activeSub],{role:v}):blankDeal(v); }
+      subDeals=[keep]; activeSub=0;
+    }
+    applyMode(); dealToForm(subDeals[activeSub]);
+  }
   function openEditor(c){
     editingId = c ? c.id : null;
-    const role = c ? (c.role||"buyer") : "buyer";
     $("f_name").value=c?c.client_name||"":"";
     $("f_email").value=c?c.email||"":"";
     $("f_email2").value=c?c.email2||"":"";
-    $("f_role").value=role;
-    $("f_status").value=c?c.status_label||"":"";
-    $("f_phase").value=c?c.phase||"active":"active";
-    fillStageOptions(role, c?c.current_index:0);
-    $("f_addr").value=c?c.property_address||"":"";
-    $("f_meta").value=c?c.property_meta||"":"";
-    $("f_price").value=c?c.property_price||"":"";
-    $("f_pricelbl").value=c?c.price_label||"":"";
-    rowSet("photoRows", PHOTO_F, (c&&c.photos||[]).map(u=>({url:u})));
-    $("upStatus").textContent="";
-    rowSet("dateRows", DATE_F, c&&c.key_dates||[]);
-    docDraft = (c&&c.documents||[]).map(d=>Object.assign({},d)); renderDocList(); $("docStatus").textContent="";
-    $("f_c1").value=c?c.close_1||"":""; $("f_c2").value=c?c.close_2||"":""; $("f_c3").value=c?c.close_3||"":"";
-    $("f_cnet").value=c?c.close_net||"":""; $("f_bar").value=c?c.bar_value||"":"";
-    $("f_loanpct").value=c?(c.loan_pct!=null?c.loan_pct:70):70; $("f_ownpct").value=c?(c.own_pct!=null?c.own_pct:30):30;
-    applyCloseLabels(role);
-    $("closingCard").style.display = $("f_phase").value==="closed" ? "block" : "none";
+    const both = !!(c && c.cross_deal);
+    $("f_role").value = both ? "both" : (c?(c.role||"buyer"):"buyer");
+    if(both){
+      const buy = dealFromRow(c,"buyer");
+      const sell = Object.assign(blankDeal("seller"), c.cross_deal||{}, {role:"seller"});
+      subDeals=[buy, sell];
+    } else {
+      const r=$("f_role").value;
+      subDeals=[ c ? dealFromRow(c, r) : blankDeal(r) ];
+    }
+    activeSub=0; applyMode();
+    dealToForm(subDeals[0]);
     $("deleteBtn").style.display = c ? "inline-flex" : "none";
     $("listView").style.display="none"; $("editView").style.display="block";
     window.scrollTo({top:0});
   }
   function collect(){
-    return {
-      client_name:$("f_name").value.trim(),
-      email:$("f_email").value.trim(),
-      email2:$("f_email2").value.trim()||null,
-      role:$("f_role").value,
-      status_label:$("f_status").value.trim(),
-      phase:$("f_phase").value,
-      current_index:parseInt($("f_stage").value,10)||0,
-      property_address:$("f_addr").value.trim(),
-      property_meta:$("f_meta").value.trim(),
-      property_price:$("f_price").value.trim(),
-      price_label:$("f_pricelbl").value.trim(),
-      photos:collectRows("photoRows").map(r=>r.url).filter(Boolean),
-      key_dates:collectRows("dateRows"),
-      documents:docDraft.map(d=>{ const o={label:(d.label||"").trim()}; if(d.path!==undefined){ o.path=d.path; } else { o.url=(d.url||"").trim(); } return o; }).filter(d=>d.path||d.url),
-      close_1:$("f_c1").value.trim(),close_2:$("f_c2").value.trim(),close_3:$("f_c3").value.trim(),
-      close_net:$("f_cnet").value.trim(),bar_value:$("f_bar").value.trim(),
-      loan_pct:parseInt($("f_loanpct").value,10)||0, own_pct:parseInt($("f_ownpct").value,10)||0
-    };
+    subDeals[activeSub]=formToDeal(subDeals[activeSub].role);
+    const person={ client_name:$("f_name").value.trim(), email:$("f_email").value.trim(), email2:$("f_email2").value.trim()||null };
+    if($("f_role").value==="both"){
+      const buy=subDeals.find(d=>d.role==="buyer")||blankDeal("buyer");
+      const sell=subDeals.find(d=>d.role==="seller")||blankDeal("seller");
+      return Object.assign({}, person, dealColumns(buy), { cross_deal: sell });
+    }
+    return Object.assign({}, person, dealColumns(subDeals[0]), { cross_deal: null });
   }
   async function save(){
     const data=collect();
@@ -514,8 +576,9 @@
     ["dragenter","dragover"].forEach(ev=>dz2.addEventListener(ev,(e)=>{ e.preventDefault(); dz2.classList.add("drag"); }));
     ["dragleave","dragend"].forEach(ev=>dz2.addEventListener(ev,(e)=>{ e.preventDefault(); dz2.classList.remove("drag"); }));
     dz2.addEventListener("drop",(e)=>{ e.preventDefault(); dz2.classList.remove("drag"); uploadDocs(e.dataTransfer.files); });
-    $("f_role").onchange=()=>{ fillStageOptions($("f_role").value, parseInt($("f_stage").value,10)); applyCloseLabels($("f_role").value); };
+    $("f_role").onchange=onSideChange;
     $("f_phase").onchange=()=>{ $("closingCard").style.display = $("f_phase").value==="closed" ? "block" : "none"; };
+    document.querySelectorAll("#subTabs .subtab").forEach(b=>b.onclick=()=>switchSub(parseInt(b.dataset.sub,10)));
     $("copyLink").onclick=async ()=>{
       try{ await navigator.clipboard.writeText(PORTAL_URL); toast("Portal link copied"); }
       catch(e){ toast(PORTAL_URL); }

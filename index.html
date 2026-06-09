@@ -677,9 +677,10 @@
       $("loadingView").textContent = "We could not find a transaction tied to this email yet. Reach out to Carson and he will get you set up.";
       show("loadingView"); return;
     }
-    myDeals = rows;
+    myDeals = [];
+    rows.forEach(r=>{ myDeals.push(r); if(r.cross_deal){ myDeals.push(Object.assign({ id:r.id, client_name:r.client_name }, r.cross_deal)); } });
     renderSwitcher(0);
-    renderPortal(rows[0]);
+    renderPortal(myDeals[0]);
     loadUpdates(sb);
     $("meEmail").textContent = email;
     $("portalFoot").style.display = "block";
