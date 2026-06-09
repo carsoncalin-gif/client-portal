@@ -137,6 +137,7 @@
           <h3>Person &amp; deal</h3>
           <div class="field"><label>Client name</label><input id="f_name" placeholder="Maria, or James &amp; Carol"></div>
           <div class="field"><label>Sign-in email</label><input id="f_email" type="email" placeholder="client@email.com"><div class="hint">The email they log in with. Each client only sees their own portal.</div></div>
+          <div class="field"><label>Partner email (optional)</label><input id="f_email2" type="email" placeholder="spouse@email.com"><div class="hint">For couples — both people can log in and see this same portal.</div></div>
           <div class="row2">
             <div class="field"><label>Side</label><select id="f_role"><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
             <div class="field"><label>Status pill</label><input id="f_status" placeholder="Under contract"></div>
@@ -195,7 +196,8 @@
         </div>
 
         <div class="save-bar">
-          <button class="btn ghost" id="copyLink">Copy link</button>
+          <button class="btn ghost" id="copyInvite">Invite</button>
+          <button class="btn ghost" id="copyLink">Link</button>
           <button class="btn" id="saveBtn">Save</button>
         </div>
         <div style="text-align:center;margin-top:14px"><button class="btn danger sm" id="deleteBtn" style="display:none">Delete client</button></div>
@@ -314,6 +316,7 @@
     const role = c ? (c.role||"buyer") : "buyer";
     $("f_name").value=c?c.client_name||"":"";
     $("f_email").value=c?c.email||"":"";
+    $("f_email2").value=c?c.email2||"":"";
     $("f_role").value=role;
     $("f_status").value=c?c.status_label||"":"";
     $("f_phase").value=c?c.phase||"active":"active";
@@ -338,6 +341,7 @@
     return {
       client_name:$("f_name").value.trim(),
       email:$("f_email").value.trim(),
+      email2:$("f_email2").value.trim()||null,
       role:$("f_role").value,
       status_label:$("f_status").value.trim(),
       phase:$("f_phase").value,
@@ -388,6 +392,14 @@
     $("copyLink").onclick=async ()=>{
       try{ await navigator.clipboard.writeText(PORTAL_URL); toast("Portal link copied"); }
       catch(e){ toast(PORTAL_URL); }
+    };
+    $("copyInvite").onclick=async ()=>{
+      const name=$("f_name").value.trim()||"there";
+      const email=$("f_email").value.trim();
+      const noun=$("f_role").value==="seller"?"home sale":"home purchase";
+      const msg="Hi "+name+"! I set up a private portal so you can follow your "+noun+" every step of the way — where things stand, what's next, photos, and key dates.\n\nOpen this link: "+PORTAL_URL+"\nEnter your email"+(email?" ("+email+")":"")+" and you'll get a secure 6-digit code to sign in — no password to remember.\n\nTip: once you're in, tap your phone browser's Share button and \"Add to Home Screen\" so it lives like an app.\n\n— Carson";
+      try{ await navigator.clipboard.writeText(msg); toast("Invite message copied"); }
+      catch(e){ toast("Copy failed"); }
     };
     $("signOut").onclick=async ()=>{ await sb.auth.signOut(); location.reload(); };
   }

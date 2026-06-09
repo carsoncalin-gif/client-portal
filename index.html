@@ -644,7 +644,7 @@
     }
 
     const email = session.user.email;
-    const { data, error } = await sb.from("clients").select("*").ilike("email", email).maybeSingle();
+    const { data, error } = await sb.from("clients").select("*").or("email.ilike."+email+",email2.ilike."+email).maybeSingle();
     if(error || !data){
       $("loadingView").textContent = "We could not find a transaction tied to this email yet. Reach out to Carson and he will get you set up.";
       show("loadingView"); return;
