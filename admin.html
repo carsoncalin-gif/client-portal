@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1b2426">
-<title>Portal Admin · LivIndy Realty</title>
+<title>Portal Admin · Carson Calin Real Estate</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -76,6 +76,7 @@
   .dropzone{border:2px dashed var(--line);border-radius:12px;padding:22px 16px;text-align:center;color:var(--ink-soft);font-size:13.5px;margin-bottom:12px;transition:.15s}
   .dropzone.drag{border-color:var(--teal);background:var(--teal-wash)}
   .dropzone a{color:var(--teal-deep);font-weight:600;cursor:pointer}
+  .filetag{flex:none;font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--teal-deep);background:var(--teal-wash);padding:6px 9px;border-radius:8px}
   .save-bar{position:sticky;bottom:14px;display:flex;gap:10px;background:rgba(245,241,234,.9);backdrop-filter:blur(6px);padding:10px;border:1px solid var(--line);border-radius:14px;margin-top:18px;box-shadow:var(--shadow)}
   .save-bar .btn{flex:1}
   #closingCard{display:none}
@@ -93,7 +94,7 @@
   <!-- LOGIN -->
   <div id="loginView">
     <div class="login-card">
-      <div class="mark">L</div>
+      <div class="mark">C</div>
       <h1>Portal Admin</h1>
       <p>Sign in with your email to manage your clients.</p>
       <div id="emailStep">
@@ -113,7 +114,7 @@
   <div id="adminView">
     <div class="wrap">
       <div class="topbar">
-        <div class="brand"><div class="mark">L</div><div><b>Portal Admin</b><span id="whoami"></span></div></div>
+        <div class="brand"><div class="mark">C</div><div><b>Portal Admin</b><span id="whoami"></span></div></div>
         <button class="btn ghost sm" id="signOut">Sign out</button>
       </div>
 
@@ -181,8 +182,14 @@
 
         <div class="card">
           <h3>Documents</h3>
-          <div class="rowset" id="docRows"></div>
-          <button class="addrow" id="addDoc">+ Add document link</button>
+          <div class="dropzone" id="docZone">
+            <input type="file" id="docFile" accept=".pdf,.doc,.docx,image/*" multiple style="display:none">
+            <div>Drag files here, or <a id="browseDocs">browse / scan a doc</a></div>
+            <div id="docStatus" class="hint" style="margin-top:6px"></div>
+          </div>
+          <div id="docList"></div>
+          <button class="addrow" id="addDocLink">+ Add external link instead</button>
+          <div class="hint" style="margin-top:10px">Uploaded files are private — only this client can open them, via a secure expiring link. (Save the client once before uploading.)</div>
         </div>
 
         <div class="card" id="closingCard">
@@ -347,6 +354,37 @@
     $("upStatus").textContent = done ? done+" photo"+(done>1?"s":"")+" added — tap Save to keep them." : "";
   }
 
+  let docDraft=[];
+  function renderDocList(){
+    const wrap=$("docList"); wrap.innerHTML="";
+    docDraft.forEach((d,i)=>{
+      const row=document.createElement("div"); row.className="ritem";
+      if(d.path!==undefined){
+        row.innerHTML='<input data-k="label" placeholder="Document name" value="'+esc(d.label||"")+'"><span class="filetag">FILE</span><button class="x" title="Remove">&times;</button>';
+      } else {
+        row.innerHTML='<input data-k="label" placeholder="Label" value="'+esc(d.label||"")+'"><input data-k="url" placeholder="https://..." value="'+esc(d.url||"")+'"><button class="x" title="Remove">&times;</button>';
+      }
+      row.querySelectorAll("input").forEach(inp=>inp.addEventListener("input",()=>{ docDraft[i][inp.dataset.k]=inp.value; }));
+      row.querySelector(".x").onclick=()=>{ docDraft.splice(i,1); renderDocList(); };
+      wrap.appendChild(row);
+    });
+  }
+  async function uploadDocs(files){
+    if(!editingId){ toast("Save the client once first, then upload documents."); return; }
+    const list=[...files]; if(!list.length) return;
+    $("docStatus").textContent="Uploading "+list.length+" file"+(list.length>1?"s":"")+"…";
+    let done=0;
+    for(const file of list){
+      const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+      const path=editingId+"/"+Date.now()+"-"+Math.random().toString(36).slice(2,7)+"-"+safe;
+      const { error } = await sb.storage.from("client-docs").upload(path, file, { upsert:false });
+      if(error){ toast("Upload failed: "+error.message); continue; }
+      docDraft.push({ label:file.name, path:path }); renderDocList();
+      done++; $("docStatus").textContent="Uploaded "+done+" of "+list.length+"…";
+    }
+    $("docStatus").textContent = done ? done+" file"+(done>1?"s":"")+" added — tap Save." : "";
+  }
+
   function openEditor(c){
     editingId = c ? c.id : null;
     const role = c ? (c.role||"buyer") : "buyer";
@@ -364,7 +402,7 @@
     rowSet("photoRows", PHOTO_F, (c&&c.photos||[]).map(u=>({url:u})));
     $("upStatus").textContent="";
     rowSet("dateRows", DATE_F, c&&c.key_dates||[]);
-    rowSet("docRows", DOC_F, c&&c.documents||[]);
+    docDraft = (c&&c.documents||[]).map(d=>Object.assign({},d)); renderDocList(); $("docStatus").textContent="";
     $("f_c1").value=c?c.close_1||"":""; $("f_c2").value=c?c.close_2||"":""; $("f_c3").value=c?c.close_3||"":"";
     $("f_cnet").value=c?c.close_net||"":""; $("f_bar").value=c?c.bar_value||"":"";
     $("f_loanpct").value=c?(c.loan_pct!=null?c.loan_pct:70):70; $("f_ownpct").value=c?(c.own_pct!=null?c.own_pct:30):30;
@@ -389,7 +427,7 @@
       price_label:$("f_pricelbl").value.trim(),
       photos:collectRows("photoRows").map(r=>r.url).filter(Boolean),
       key_dates:collectRows("dateRows"),
-      documents:collectRows("docRows"),
+      documents:docDraft.map(d=>{ const o={label:(d.label||"").trim()}; if(d.path!==undefined){ o.path=d.path; } else { o.url=(d.url||"").trim(); } return o; }).filter(d=>d.path||d.url),
       close_1:$("f_c1").value.trim(),close_2:$("f_c2").value.trim(),close_3:$("f_c3").value.trim(),
       close_net:$("f_cnet").value.trim(),bar_value:$("f_bar").value.trim(),
       loan_pct:parseInt($("f_loanpct").value,10)||0, own_pct:parseInt($("f_ownpct").value,10)||0
@@ -429,7 +467,13 @@
     ["dragleave","dragend"].forEach(ev=>dz.addEventListener(ev,(e)=>{ e.preventDefault(); dz.classList.remove("drag"); }));
     dz.addEventListener("drop",(e)=>{ e.preventDefault(); dz.classList.remove("drag"); uploadFiles(e.dataTransfer.files); });
     $("addDate").onclick=()=>addRowEl("dateRows",DATE_F,null);
-    $("addDoc").onclick=()=>addRowEl("docRows",DOC_F,null);
+    $("addDocLink").onclick=()=>{ docDraft.push({label:"",url:""}); renderDocList(); };
+    $("browseDocs").onclick=()=>$("docFile").click();
+    $("docFile").onchange=(e)=>uploadDocs(e.target.files);
+    const dz2=$("docZone");
+    ["dragenter","dragover"].forEach(ev=>dz2.addEventListener(ev,(e)=>{ e.preventDefault(); dz2.classList.add("drag"); }));
+    ["dragleave","dragend"].forEach(ev=>dz2.addEventListener(ev,(e)=>{ e.preventDefault(); dz2.classList.remove("drag"); }));
+    dz2.addEventListener("drop",(e)=>{ e.preventDefault(); dz2.classList.remove("drag"); uploadDocs(e.dataTransfer.files); });
     $("f_role").onchange=()=>{ fillStageOptions($("f_role").value, parseInt($("f_stage").value,10)); applyCloseLabels($("f_role").value); };
     $("f_phase").onchange=()=>{ $("closingCard").style.display = $("f_phase").value==="closed" ? "block" : "none"; };
     $("copyLink").onclick=async ()=>{

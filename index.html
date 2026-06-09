@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1b2426">
-<title>Your Home Portal · LivIndy Realty</title>
+<title>Your Home Portal · Carson Calin Real Estate</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -206,7 +206,7 @@
   <!-- LOGIN -->
   <div id="loginView">
     <div class="login-card">
-      <div class="mark">L</div>
+      <div class="mark">C</div>
       <h1>Your Home Portal</h1>
       <p id="loginIntro">Enter your email and we will send you a 6-digit code to sign in. No password to remember.</p>
       <div id="emailStep">
@@ -230,8 +230,8 @@
   <div class="wrap" id="portalView" style="display:none">
     <div class="topline">
       <div class="brand">
-        <div class="mark">L</div>
-        <div><b>LivIndy Realty</b><span>Carson Calin, REALTOR</span></div>
+        <div class="mark">C</div>
+        <div><b>Carson Calin Real Estate</b><span>Carson Calin, REALTOR&reg;</span></div>
       </div>
       <a class="msg-btn" href="sms:+13179035973">Message Carson</a>
     </div>
@@ -334,6 +334,7 @@
   /* ========================================== */
 
   const configured = !SUPABASE_URL.startsWith("YOUR_") && !SUPABASE_ANON_KEY.startsWith("YOUR_");
+  let sb;
 
   /* ---- copy and stages that live in code (same for every client of that type) ---- */
   const COPY = {
@@ -571,9 +572,11 @@
     if(!list || !list.length){ sec.style.display="none"; return; }
     wrap.innerHTML="";
     list.forEach(d=>{
-      const a=document.createElement("a"); a.className="doc-row";
-      a.href=d.url||"#"; if(d.url){ a.target="_blank"; a.rel="noopener"; }
+      const a=document.createElement("a"); a.className="doc-row"; a.target="_blank"; a.rel="noopener";
       a.innerHTML='<span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span><b>'+esc(d.label||d.title||"Document")+'</b><span class="arw">&rsaquo;</span>';
+      if(d.url){ a.href=d.url; }
+      else if(d.path && sb){ a.href="#"; sb.storage.from("client-docs").createSignedUrl(d.path,3600).then(r=>{ if(r.data&&r.data.signedUrl) a.href=r.data.signedUrl; }).catch(()=>{}); }
+      else { a.href="#"; }
       wrap.appendChild(a);
     });
     sec.style.display="block";
@@ -610,7 +613,7 @@
     if(!configured){ renderPortal(DEMO); renderUpdates(SAMPLE_UPDATES); return; }
     $("demoBanner").style.display="none";
 
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     show("loadingView");
 
     const { data:{ session } } = await sb.auth.getSession();
