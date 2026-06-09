@@ -359,10 +359,11 @@
     if(!data.client_name || !data.email){ toast("Name and email are required."); return; }
     $("saveBtn").textContent="Saving...";
     let res;
-    if(editingId){ res=await sb.from("clients").update(data).eq("id",editingId); }
-    else { res=await sb.from("clients").insert(data); }
+    if(editingId){ res=await sb.from("clients").update(data).eq("id",editingId).select(); }
+    else { res=await sb.from("clients").insert(data).select(); }
     $("saveBtn").textContent="Save";
     if(res.error){ toast("Save failed: "+res.error.message); return; }
+    if(!res.data || !res.data.length){ toast("Nothing saved — run admin_policies.sql so your account can edit."); return; }
     toast("Saved"); await loadClients(); backToList();
   }
   async function del(){
