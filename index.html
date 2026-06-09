@@ -502,10 +502,11 @@
     $("greetHead").textContent = "Welcome back, "+c.client_name+".";
     $("greetSub").textContent = copy.sub;
     $("dealStatus").textContent = c.status_label || copy.defaultStatus;
-    $("propAddr").textContent = c.property_address || "";
-    $("propMeta").textContent = c.property_meta || "";
-    $("propPrice").textContent = c.property_price || "";
-    $("propPriceLbl").textContent = c.price_label || "";
+    const searching = c.role!=="seller" && !c.property_address;
+    $("propAddr").textContent = c.property_address || (searching ? "Still searching for your home" : "");
+    $("propMeta").textContent = c.property_meta || (searching ? "We'll drop the home in here the moment you're under contract." : "");
+    $("propPrice").textContent = c.property_price || (searching ? "TBD" : "");
+    $("propPriceLbl").textContent = c.price_label || (searching ? "Target" : "");
     renderGallery(c.photos, !configured);
 
     if(c.phase === "closed"){
@@ -623,7 +624,7 @@
     myDeals.forEach((d,i)=>{
       const b=document.createElement("button"); if(i===activeIdx) b.className="active";
       const verb = d.role==="seller" ? "Selling" : "Buying";
-      const addr = d.property_address || (d.role==="seller" ? "your sale" : "your purchase");
+      const addr = d.property_address || (d.role==="seller" ? "Your sale" : "Still searching");
       b.textContent = verb+" · "+addr;
       b.onclick=()=>{ renderSwitcher(i); renderPortal(d); window.scrollTo({top:0,behavior:"smooth"}); };
       sw.appendChild(b);

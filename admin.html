@@ -58,6 +58,8 @@
   .client-card .who span{font-size:12.5px;color:var(--ink-soft)}
   .client-card .badge{margin-left:auto;flex:none;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--teal-wash);color:var(--teal-deep)}
   .client-card .badge.closed{background:#eaf6ef;color:var(--green)}
+  .client-card .adv{flex:none;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--teal-deep);font-size:17px;font-weight:700;margin-left:8px;cursor:pointer}
+  .client-card .adv:hover{background:var(--teal-wash);border-color:var(--teal)}
   .empty{color:var(--ink-soft);font-size:14px;text-align:center;padding:40px 10px}
 
   /* editor */
@@ -97,9 +99,15 @@
       <div class="mark">C</div>
       <h1>Portal Admin</h1>
       <p>Sign in with your email to manage your clients.</p>
-      <div id="emailStep">
-        <input type="email" id="loginEmail" placeholder="you@email.com" autocomplete="email" style="margin-bottom:12px">
+      <input type="email" id="loginEmail" placeholder="you@email.com" autocomplete="email" style="margin-bottom:12px">
+      <div id="pwStep">
+        <input type="password" id="loginPw" placeholder="Password" autocomplete="current-password" style="margin-bottom:12px">
+        <button class="btn" id="pwBtn">Sign in</button>
+        <div class="sent" style="display:block;color:var(--ink-soft);margin-top:12px"><a href="#" id="useCode">Email me a code instead</a></div>
+      </div>
+      <div id="emailStep" style="display:none">
         <button class="btn" id="loginBtn">Send me my code</button>
+        <div class="sent" style="display:block;color:var(--ink-soft);margin-top:12px"><a href="#" id="usePw">Use password instead</a></div>
       </div>
       <div id="codeStep" style="display:none">
         <input type="text" id="loginCode" placeholder="Enter your code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="margin-bottom:12px">
@@ -115,7 +123,7 @@
     <div class="wrap">
       <div class="topbar">
         <div class="brand"><div class="mark">C</div><div><b>Portal Admin</b><span id="whoami"></span></div></div>
-        <button class="btn ghost sm" id="signOut">Sign out</button>
+        <div style="display:flex;gap:8px"><button class="btn ghost sm" id="setPw">Set password</button><button class="btn ghost sm" id="signOut">Sign out</button></div>
       </div>
 
       <!-- not authorized -->
@@ -130,6 +138,7 @@
           <h2>Your clients</h2>
           <button class="btn sm" id="newClient">+ New client</button>
         </div>
+        <input id="searchBox" placeholder="Search by name, email, or address…" style="margin-bottom:14px">
         <div id="clientList"></div>
       </div>
 
@@ -255,6 +264,17 @@
     pendingEmail=email; $("emailStep").style.display="none"; $("codeStep").style.display="block"; $("loginSent").style.display="block"; $("loginCode").focus();
   }
   function wireLogin(){
+    $("pwBtn").onclick=async ()=>{
+      const email=$("loginEmail").value.trim(), pw=$("loginPw").value;
+      if(!email || !pw){ toast("Enter your email and password."); return; }
+      $("pwBtn").textContent="Signing in...";
+      const { error } = await sb.auth.signInWithPassword({ email, password:pw });
+      $("pwBtn").textContent="Sign in";
+      if(error){ toast("Wrong email or password — or sign in with a code, then set a password."); return; }
+      location.reload();
+    };
+    $("useCode").onclick=(e)=>{ e.preventDefault(); $("pwStep").style.display="none"; $("emailStep").style.display="block"; };
+    $("usePw").onclick=(e)=>{ e.preventDefault(); $("emailStep").style.display="none"; $("codeStep").style.display="none"; $("loginSent").style.display="none"; $("pwStep").style.display="block"; };
     $("loginBtn").onclick=sendCode;
     $("resendLink").onclick=(e)=>{ e.preventDefault(); $("emailStep").style.display="block"; sendCode(); };
     $("verifyBtn").onclick=async ()=>{
@@ -288,17 +308,37 @@
   function renderList(){
     const wrap=$("clientList");
     if(!clients.length){ wrap.innerHTML='<div class="empty">No clients yet. Tap "+ New client" to add your first.</div>'; return; }
+    const q=($("searchBox").value||"").toLowerCase().trim();
+    const list=clients.filter(c=> !q
+      || (c.client_name||"").toLowerCase().includes(q)
+      || (c.email||"").toLowerCase().includes(q)
+      || (c.email2||"").toLowerCase().includes(q)
+      || (c.property_address||"").toLowerCase().includes(q));
+    if(!list.length){ wrap.innerHTML='<div class="empty">No matches.</div>'; return; }
     wrap.innerHTML="";
-    clients.forEach(c=>{
+    list.forEach(c=>{
       const card=document.createElement("div"); card.className="client-card";
       const initial=(c.client_name||"?").trim().charAt(0).toUpperCase();
       const badge = c.phase==="closed" ? '<span class="badge closed">Closed</span>' : '<span class="badge">'+(c.role||"buyer")+'</span>';
       const ls = ago(lastSeen[c.id]);
       const sub = esc(stageName(c)) + ' · ' + esc(c.status_label||"") + (ls? ' · seen '+ls : '');
-      card.innerHTML='<div class="av">'+initial+'</div><div class="who"><b>'+esc(c.client_name||"(no name)")+'</b><span>'+sub+'</span></div>'+badge;
+      const arr=(c.role==="seller")?SELLER_STAGES:BUYER_STAGES;
+      const canAdv = c.phase!=="closed" && (c.current_index||0) < arr.length-1;
+      const adv = canAdv ? '<button class="adv" title="Advance to next stage">&rarr;</button>' : '';
+      card.innerHTML='<div class="av">'+initial+'</div><div class="who"><b>'+esc(c.client_name||"(no name)")+'</b><span>'+sub+'</span></div>'+badge+adv;
       card.onclick=()=>openEditor(c);
+      const ab=card.querySelector(".adv");
+      if(ab) ab.onclick=(e)=>{ e.stopPropagation(); advanceStage(c); };
       wrap.appendChild(card);
     });
+  }
+  async function advanceStage(c){
+    const arr=(c.role==="seller")?SELLER_STAGES:BUYER_STAGES;
+    const next=Math.min((c.current_index||0)+1, arr.length-1);
+    const { data, error } = await sb.from("clients").update({ current_index:next }).eq("id",c.id).select();
+    if(error || !data || !data.length){ toast("Couldn't update — check your admin access."); return; }
+    toast((c.client_name||"Client")+" → "+arr[next]);
+    await loadClients();
   }
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
 
@@ -489,6 +529,14 @@
       catch(e){ toast("Copy failed"); }
     };
     $("signOut").onclick=async ()=>{ await sb.auth.signOut(); location.reload(); };
+    $("searchBox").oninput=renderList;
+    $("setPw").onclick=async ()=>{
+      const pw=prompt("Set a password for faster sign-in next time (at least 6 characters):");
+      if(!pw) return;
+      if(pw.length<6){ toast("Use at least 6 characters."); return; }
+      const { error } = await sb.auth.updateUser({ password:pw });
+      toast(error ? "Couldn't set password." : "Password set — use it next time.");
+    };
   }
 
   /* ---------- boot ---------- */
