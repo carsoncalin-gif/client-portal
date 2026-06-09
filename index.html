@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1b2426">
+<title>Your Home Portal · LivIndy Realty</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b2426; --ink-soft:#4a5a5d; --paper:#f5f1ea; --card:#ffffff;
+    --teal:#0e9fb0; --teal-deep:#0a7a87; --teal-wash:#e2f2f4;
+    --gold:#c98a2b; --line:#e6ded2; --green:#2f9e6f;
+    --shadow:0 18px 50px -22px rgba(20,40,42,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Hanken Grotesk',sans-serif;
+    background:radial-gradient(1200px 600px at 80% -10%, rgba(14,159,176,.10), transparent 60%), var(--paper);
+    color:var(--ink); min-height:100vh; padding:0 0 80px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 22px}
+
+  /* demo banner (auto hides once you add real Supabase keys) */
+  .demo-banner{background:var(--gold);color:#241a08;font-size:12.5px;font-weight:600;
+    text-align:center;padding:8px 14px;letter-spacing:.01em}
+
+  /* login */
+  #loginView{display:none;min-height:88vh;align-items:center;justify-content:center}
+  .login-card{background:var(--card);border:1px solid var(--line);border-radius:22px;
+    padding:38px 34px;max-width:420px;width:100%;box-shadow:var(--shadow);text-align:center}
+  .login-card .mark{width:52px;height:52px;border-radius:15px;background:var(--teal);margin:0 auto 18px;
+    display:grid;place-items:center;color:#04282c;font-family:'Fraunces',serif;font-weight:700;font-size:26px;
+    box-shadow:0 8px 20px -8px rgba(14,159,176,.7)}
+  .login-card h1{font-family:'Fraunces',serif;font-weight:600;font-size:26px;margin-bottom:6px}
+  .login-card p{color:var(--ink-soft);font-size:14.5px;line-height:1.5;margin-bottom:20px}
+  .login-card input{width:100%;border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+    font-family:inherit;font-size:15px;margin-bottom:12px;outline:none}
+  .login-card input:focus{border-color:var(--teal)}
+  .login-card button{width:100%;border:0;background:var(--ink);color:#fff;font-family:inherit;
+    font-weight:700;font-size:15px;padding:14px;border-radius:12px;cursor:pointer;transition:.2s}
+  .login-card button:hover{background:var(--teal-deep)}
+  .login-card .sent{color:var(--green);font-size:14px;margin-top:14px;display:none}
+
+  /* loading */
+  #loadingView{display:none;min-height:80vh;align-items:center;justify-content:center;color:var(--ink-soft)}
+
+  /* portal header */
+  .topline{display:flex;align-items:center;justify-content:space-between;padding:30px 0 22px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand .mark{width:38px;height:38px;border-radius:11px;background:var(--teal);display:grid;place-items:center;
+    color:#04282c;font-family:'Fraunces',serif;font-weight:700;font-size:19px;box-shadow:0 6px 16px -6px rgba(14,159,176,.7)}
+  .brand b{font-family:'Fraunces',serif;font-weight:600;font-size:16px;display:block;line-height:1.1}
+  .brand span{font-size:12px;color:var(--ink-soft);letter-spacing:.03em}
+  .msg-btn{text-decoration:none;background:var(--ink);color:#fff;font-weight:600;font-size:13px;
+    padding:10px 18px;border-radius:999px;transition:.2s}
+  .msg-btn:hover{background:var(--teal-deep)}
+
+  .greet{margin:14px 0 6px}
+  .greet .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--teal-deep);background:var(--teal-wash);
+    padding:6px 13px;border-radius:999px}
+  .greet h1{font-family:'Fraunces',serif;font-weight:600;font-size:38px;line-height:1.06;margin:16px 0 8px;letter-spacing:-.01em}
+  .greet p{color:var(--ink-soft);font-size:16px;max-width:54ch;line-height:1.5}
+
+  /* gallery */
+  .gallery{margin:22px 0 4px}
+  .gallery .hero{width:100%;height:320px;border-radius:18px;overflow:hidden;box-shadow:var(--shadow);position:relative}
+  .gallery .hero img{width:100%;height:100%;object-fit:cover;display:block}
+  .gallery .tile{width:100%;height:100%}
+  .thumbs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}
+  .thumbs .t{height:66px;border-radius:11px;overflow:hidden;cursor:pointer;border:2px solid transparent;transition:.18s}
+  .thumbs .t img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumbs .t.active{border-color:var(--teal)}
+
+  /* property strip */
+  .prop{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--line);
+    border-radius:18px;padding:16px 18px;margin:18px 0;box-shadow:var(--shadow)}
+  .prop .addr{font-family:'Fraunces',serif;font-weight:600;font-size:18px}
+  .prop .meta{font-size:13px;color:var(--ink-soft);margin-top:3px}
+  .prop .price{margin-left:auto;text-align:right}
+  .prop .price b{font-family:'Fraunces',serif;font-size:22px;font-weight:600}
+  .prop .price span{display:block;font-size:11.5px;color:var(--ink-soft);letter-spacing:.04em;text-transform:uppercase}
+
+  .section-h{font-family:'Fraunces',serif;font-weight:600;font-size:13px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-soft);margin:34px 0 16px}
+
+  /* roadmap */
+  .step{display:flex;gap:16px;position:relative}
+  .step .rail{display:flex;flex-direction:column;align-items:center;flex:none;width:26px}
+  .step .dot{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;
+    border:2px solid var(--line);background:var(--card);font-size:12px;font-weight:700;color:var(--ink-soft);transition:.25s;z-index:2}
+  .step .bar{width:2px;flex:1;background:var(--line);margin:2px 0}
+  .step:last-child .bar{display:none}
+  .step .body{padding:0 0 26px}
+  .step .body h3{font-size:16px;font-weight:600;line-height:1.2}
+  .step .body p{font-size:13.5px;color:var(--ink-soft);margin-top:4px;line-height:1.45;max-width:52ch}
+  .step.done .dot{background:var(--green);border-color:var(--green);color:#fff}
+  .step.done .bar{background:var(--green)}
+  .step.done .body h3{color:var(--ink-soft)}
+  .step.current .dot{background:var(--teal);border-color:var(--teal);color:#04282c;box-shadow:0 0 0 5px var(--teal-wash)}
+  .step.current .body{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:26px;box-shadow:var(--shadow)}
+  .step.current .body .badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--teal-deep);background:var(--teal-wash);padding:4px 10px;border-radius:999px;margin-bottom:8px}
+  .step .prep strong{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--gold)}
+  .step .prep ul{margin:7px 0 0;padding-left:18px}
+  .step .prep li{font-size:13px;color:var(--ink);margin:3px 0}
+
+  /* roadmap progress + interactive steps */
+  .progress-head{display:flex;align-items:center;gap:12px;margin:0 0 20px}
+  .progress-track{flex:1;height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--teal-deep));border-radius:999px;transition:width .6s ease}
+  .progress-head .pct{font-size:12.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap}
+  .step.tappable{cursor:pointer}
+  .step .body h3{display:flex;align-items:center;gap:8px}
+  .step .chev{margin-left:auto;flex:none;width:16px;height:16px;color:var(--ink-soft);opacity:.55;transition:transform .25s}
+  .step.open .chev{transform:rotate(180deg)}
+  .step .detail{max-height:0;overflow:hidden;transition:max-height .3s ease}
+  .step.open .detail{max-height:420px}
+  .step .detail .inner{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
+  .step .whatsnext{font-size:12.5px;color:var(--ink-soft);margin-top:10px}
+  .step .whatsnext b{color:var(--teal-deep);font-weight:600}
+  /* updates feed */
+  .update-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .update-card h4{font-family:'Fraunces',serif;font-weight:600;font-size:17px}
+  .update-card .date{font-size:11.5px;color:var(--ink-soft);letter-spacing:.04em;text-transform:uppercase;margin-top:3px}
+  .update-card p{font-size:14px;color:var(--ink-soft);line-height:1.5;margin-top:9px;white-space:pre-wrap}
+
+  /* page tabs */
+  .tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px;margin:16px 0 6px;box-shadow:var(--shadow)}
+  .tab{flex:1;border:0;background:transparent;font-family:inherit;font-weight:600;font-size:13.5px;color:var(--ink-soft);padding:11px;border-radius:10px;cursor:pointer;transition:.18s}
+  .tab.active{background:var(--ink);color:#fff}
+  .page{animation:fadein .25s ease}
+  @keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+  /* important dates */
+  .date-row{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 15px;margin-bottom:10px;box-shadow:var(--shadow)}
+  .date-row .cal{flex:none;width:46px;height:46px;border-radius:12px;background:var(--teal-wash);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
+  .date-row .cal .m{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-deep)}
+  .date-row .cal .d{font-family:'Fraunces',serif;font-weight:600;font-size:18px;color:var(--ink)}
+  .date-row .info b{font-size:14.5px;font-weight:600;display:block}
+  .date-row .info span{font-size:12.5px;color:var(--ink-soft)}
+  .date-row.soon{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-wash),var(--shadow)}
+  /* documents */
+  .doc-row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:10px;text-decoration:none;color:var(--ink);box-shadow:var(--shadow);transition:.15s}
+  .doc-row:hover{border-color:var(--teal)}
+  .doc-row .ic{flex:none;width:34px;height:34px;border-radius:9px;background:var(--teal-wash);display:grid;place-items:center;color:var(--teal-deep)}
+  .doc-row b{font-size:14px;font-weight:600;flex:1}
+  .doc-row .arw{color:var(--ink-soft);flex:none;font-size:20px;line-height:1}
+  /* quick actions */
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .action-btn{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 15px;text-decoration:none;color:var(--ink);font-weight:600;font-size:13.5px;box-shadow:var(--shadow);transition:.15s}
+  .action-btn:hover{border-color:var(--teal);background:var(--teal-wash)}
+  .action-btn .ic{flex:none;width:30px;height:30px;border-radius:8px;background:var(--teal-wash);display:grid;place-items:center;color:var(--teal-deep)}
+  @media(max-width:560px){ .actions{grid-template-columns:1fr} }
+
+  /* closed view */
+  #equityView{display:none}
+  .celebrate{background:linear-gradient(135deg,var(--ink),#0a7a87);color:#fff;border-radius:20px;
+    padding:26px 24px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .celebrate::after{content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;
+    background:radial-gradient(circle,rgba(255,255,255,.12),transparent 70%)}
+  .celebrate .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:700}
+  .celebrate h2{font-family:'Fraunces',serif;font-weight:600;font-size:28px;margin:8px 0 4px}
+  .celebrate p{color:#bcd6d9;font-size:14.5px;max-width:48ch;line-height:1.5}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  .stat span{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+  .stat b{display:block;font-family:'Fraunces',serif;font-weight:600;font-size:25px;margin-top:6px}
+  .stat.accent b{color:var(--green)}
+  .equity-bar-wrap{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  .equity-bar-wrap .lbl{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-soft);margin-bottom:9px}
+  .equity-bar{height:16px;border-radius:999px;background:var(--line);overflow:hidden;display:flex}
+  .equity-bar .loan{background:#c4b8a6}
+  .equity-bar .own{background:var(--green)}
+  .equity-bar-wrap .key{display:flex;gap:18px;margin-top:11px;font-size:12px;color:var(--ink-soft)}
+  .equity-bar-wrap .key i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:-1px}
+  .disclaimer{font-size:11.5px;color:var(--ink-soft);margin-top:14px;line-height:1.4;font-style:italic}
+  .next-cta{display:flex;align-items:center;gap:14px;background:var(--teal-wash);border:1px solid #c5e6ea;
+    border-radius:16px;padding:16px 18px;margin-top:16px}
+  .next-cta p{font-size:14px;color:var(--ink)}
+  .next-cta p b{font-family:'Fraunces',serif}
+  .next-cta a{margin-left:auto;flex:none;text-decoration:none;background:var(--teal);color:#04282c;
+    font-weight:700;font-size:13px;padding:10px 16px;border-radius:999px}
+
+  @media(max-width:560px){
+    .greet h1{font-size:30px}
+    .gallery .hero{height:230px}
+    .thumbs{grid-template-columns:repeat(4,1fr)}
+    .prop{flex-wrap:wrap}
+    .prop .price{margin-left:0;text-align:left;width:100%;border-top:1px solid var(--line);padding-top:10px}
+    .stat-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+  <div class="demo-banner" id="demoBanner">Preview mode. Add your Supabase keys in the CONFIG block to switch on real logins and live data.</div>
+
+  <!-- LOGIN -->
+  <div id="loginView">
+    <div class="login-card">
+      <div class="mark">L</div>
+      <h1>Your Home Portal</h1>
+      <p id="loginIntro">Enter your email and we will send you a 6-digit code to sign in. No password to remember.</p>
+      <div id="emailStep">
+        <input type="email" id="loginEmail" placeholder="you@email.com" autocomplete="email">
+        <button id="loginBtn">Send me my code</button>
+      </div>
+      <div id="codeStep" style="display:none">
+        <input type="text" id="loginCode" placeholder="Enter your code" inputmode="numeric" autocomplete="one-time-code" maxlength="10">
+        <button id="verifyBtn">Sign in</button>
+        <div class="sent" id="resendRow" style="display:block;color:var(--ink-soft)">Didn't get it? <a href="#" id="resendLink" style="color:var(--teal-deep)">Send again</a></div>
+      </div>
+      <div class="sent" id="loginSent">We emailed you a 6-digit code. Enter it above to open your portal.</div>
+      <div id="a2hsTip" style="display:none;color:var(--ink-soft);font-size:13px;line-height:1.5;margin-top:18px"></div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loadingView">Loading your portal...</div>
+
+  <!-- PORTAL -->
+  <div class="wrap" id="portalView" style="display:none">
+    <div class="topline">
+      <div class="brand">
+        <div class="mark">L</div>
+        <div><b>LivIndy Realty</b><span>Carson Calin, REALTOR</span></div>
+      </div>
+      <a class="msg-btn" href="sms:+13179035973">Message Carson</a>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button type="button" class="tab active" data-page="pageHome">Your Home</button>
+      <button type="button" class="tab" data-page="pageMore">Dates &amp; Updates</button>
+    </div>
+
+    <!-- ============ PAGE 1: YOUR HOME ============ -->
+    <div id="pageHome" class="page">
+      <div class="greet" id="greet">
+        <span class="eyebrow"><span>&#9679;</span> <span id="dealStatus">Active</span></span>
+        <h1 id="greetHead"></h1>
+        <p id="greetSub"></p>
+      </div>
+
+      <div class="gallery" id="gallery">
+        <div class="hero" id="heroPhoto"></div>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+
+      <div class="prop">
+        <div>
+          <div class="addr" id="propAddr"></div>
+          <div class="meta" id="propMeta"></div>
+        </div>
+        <div class="price">
+          <b id="propPrice"></b>
+          <span id="propPriceLbl"></span>
+        </div>
+      </div>
+
+      <!-- DURING THE DEAL -->
+      <div id="progressView">
+        <div class="section-h">Your roadmap</div>
+        <div id="track"></div>
+      </div>
+
+    <!-- AFTER CLOSING -->
+    <div id="equityView">
+      <div class="celebrate">
+        <div class="eyebrow">Closed and recorded</div>
+        <h2 id="celebHead"></h2>
+        <p id="celebSub"></p>
+      </div>
+      <div class="section-h" id="equityHeader"></div>
+      <div class="stat-grid" id="statGrid"></div>
+      <div class="equity-bar-wrap">
+        <div class="lbl"><span id="barLeftLbl"></span><span id="barValue"></span></div>
+        <div class="equity-bar">
+          <div class="loan" id="barLoan"></div>
+          <div class="own" id="barOwn"></div>
+        </div>
+        <div class="key">
+          <span><i style="background:#c4b8a6"></i><span id="keyLoan"></span></span>
+          <span><i style="background:#2f9e6f"></i><span id="keyOwn"></span></span>
+        </div>
+      </div>
+      <div class="next-cta">
+        <p><b id="ctaHead"></b><br><span id="ctaSub"></span></p>
+        <a href="mailto:carsoncalin@livindyrealty.com">Ask Carson</a>
+      </div>
+      <p class="disclaimer">Figures shown are friendly estimates for planning only and are not an official statement from your lender or a guaranteed valuation. Real numbers come from your loan servicer and a formal market analysis.</p>
+    </div>
+    </div><!-- /pageHome -->
+
+    <!-- ============ PAGE 2: DATES & UPDATES ============ -->
+    <div id="pageMore" class="page" style="display:none">
+      <div id="datesSection" style="display:none">
+        <div class="section-h">Important dates</div>
+        <div id="datesList"></div>
+      </div>
+
+      <div id="updatesSection" style="display:none">
+        <div class="section-h">Updates &amp; tips</div>
+        <div id="updatesList"></div>
+      </div>
+
+      <div id="docsSection" style="display:none">
+        <div class="section-h">Documents</div>
+        <div id="docsList"></div>
+      </div>
+
+      <div class="section-h">Get in touch</div>
+      <div class="actions" id="actions"></div>
+    </div>
+  </div>
+
+<!-- Supabase client (used only when you add your keys below) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  /* ================= CONFIG =================
+     Paste your two Supabase values here after you create the project.
+     While these stay as the placeholders, the page runs in safe preview mode. */
+  const SUPABASE_URL = "https://vnqicwaslxynefzyvvjo.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_niTtBPiLg9trvKnZXwXGhA_uQ_Ry9lZ";
+  /* ========================================== */
+
+  const configured = !SUPABASE_URL.startsWith("YOUR_") && !SUPABASE_ANON_KEY.startsWith("YOUR_");
+
+  /* ---- copy and stages that live in code (same for every client of that type) ---- */
+  const COPY = {
+    buyer:{
+      defaultStatus:"Under contract",
+      sub:"Here is exactly where your home purchase stands and what comes next. Nothing for you to chase down. I will keep this updated as we move.",
+      steps:[
+        {t:"Game plan and approval",d:"We mapped out your plan, set your numbers, and we are ready to find your home.",
+          prep:["Have your preapproval letter ready so we know your range","Send me your must haves and your deal breakers","I line up tours the moment something fits"]},
+        {t:"Touring and offers",d:"We tour homes, weigh the options, and write your offer."},
+        {t:"Offer accepted",d:"Contract signed and earnest money delivered."},
+        {t:"Inspection",d:"We are reviewing the home with your inspector and deciding on any repair requests.",
+          prep:["Read the inspection summary I send over","Flag anything that worries you","We respond to the seller within the inspection window"]},
+        {t:"Appraisal",d:"Your lender orders the appraisal to confirm the value."},
+        {t:"Loan approval",d:"Underwriting finishes and we get your clear to close."},
+        {t:"Final walkthrough",d:"One last look to confirm the home is move in ready."},
+        {t:"Closing day",d:"You sign, you fund, and the keys are yours."}
+      ],
+      celebHead:"Congratulations, the keys are yours.",
+      celebSub:"Here is a simple look at where you stand today. Think of it as a yearly checkup on your home. I will refresh the estimate from time to time so you always know your position.",
+      equityHeader:"Your equity snapshot",
+      statLabels:["Purchase price","Your down payment","Original loan","Estimated equity today"],
+      barLeftLbl:"Estimated home value",
+      keyLoan:"Loan balance",
+      keyOwn:"Your equity",
+      ctaHead:"Curious what your home is worth?",
+      ctaSub:"Tap anytime for a fresh, no pressure estimate."
+    },
+    seller:{
+      defaultStatus:"On the market",
+      sub:"Here is where the sale of your home stands and what is coming up. I am handling the moving pieces. This page just keeps you in the loop.",
+      steps:[
+        {t:"Listing prep",d:"Photos, staging, and pricing dialed in before we go live."},
+        {t:"Live on market",d:"Your home is active and getting in front of buyers."},
+        {t:"Showings and offers",d:"Buyers are touring and we are tracking interest closely.",
+          prep:["Keep the home show ready when you can","I send you a recap after each showing","We review every offer together before responding"]},
+        {t:"Offer accepted",d:"We negotiate the best terms and go under contract."},
+        {t:"Inspection and repairs",d:"Buyer inspects and we handle any repair requests."},
+        {t:"Appraisal",d:"Buyer's lender confirms the home appraises for the price."},
+        {t:"Buyer financing",d:"We watch the buyer's loan through to clear to close."},
+        {t:"Closing day",d:"You sign, the sale records, and proceeds are on the way."}
+      ],
+      celebHead:"Sold. Nicely done.",
+      celebSub:"Here is a clean look at how the sale netted out. No fine print, just the big picture so the whole thing makes sense at a glance.",
+      equityHeader:"How your sale netted out",
+      statLabels:["Final sale price","Loan payoff","Selling costs","Estimated net to you"],
+      barLeftLbl:"Final sale price",
+      keyLoan:"Payoff and costs",
+      keyOwn:"Your net proceeds",
+      ctaHead:"Thinking about your next move?",
+      ctaSub:"Whenever you are ready, I will map out the numbers."
+    }
+  };
+
+  /* demo record used in preview mode */
+  const DEMO = {
+    client_name:"Maria", role:"buyer", phase:"active", status_label:"Under contract",
+    property_address:"7419 Sylvan Ridge Road", property_meta:"Indianapolis, IN 46240 · 3 bed · 2 bath",
+    property_price:"$310,000", price_label:"Purchase price", current_index:3, photos:[],
+    close_1:"$310,000", close_2:"$15,500", close_3:"$294,500", close_net:"$90,000",
+    bar_value:"$324,000", loan_pct:72, own_pct:28,
+    key_dates:[
+      {label:"Inspection",date:"2026-06-12",note:"Inspector arrives 10am"},
+      {label:"Appraisal window",date:"2026-06-18"},
+      {label:"Closing day",date:"2026-06-27"},
+      {label:"Welcome-home gift drop-off",date:"2026-07-01"}
+    ],
+    documents:[
+      {label:"Buyer's agreement (signed)",url:"#"},
+      {label:"Inspection summary",url:"#"}
+    ]
+  };
+
+  /* sample updates shown in preview mode only */
+  const SAMPLE_UPDATES=[
+    {title:"Welcome to your portal",
+     body:"This is where I'll post quick updates, tips, and good news as we go. Tap any step in your roadmap to see what to expect. Check back anytime.",
+     created_at:new Date().toISOString()}
+  ];
+
+  const $ = id => document.getElementById(id);
+  function show(id){ ["loginView","loadingView","portalView"].forEach(v=>$(v).style.display = v===id ? (id==="portalView"?"block":"flex") : "none"); }
+
+  function renderGallery(photos, demo){
+    const hero=$("heroPhoto"), thumbs=$("thumbs"), gal=$("gallery");
+    thumbs.innerHTML="";
+    const palette=["#1b2426,#0a7a87","#0a7a87,#0e9fb0","#2f4a4d,#1b2426","#3a5b5e,#0a7a87","#0e9fb0,#2f9e6f"];
+    if(photos && photos.length){
+      hero.innerHTML='<img src="'+photos[0]+'" alt="Home">';
+      photos.forEach((p,i)=>{
+        const t=document.createElement("div"); t.className="t"+(i===0?" active":"");
+        t.innerHTML='<img src="'+p+'" alt="">';
+        t.onclick=()=>{hero.innerHTML='<img src="'+p+'">';[...thumbs.children].forEach(c=>c.classList.remove("active"));t.classList.add("active");};
+        thumbs.appendChild(t);
+      });
+      gal.style.display="block";
+    } else if(demo){
+      hero.innerHTML='<div class="tile" style="background:linear-gradient(135deg,'+palette[0]+')"></div>';
+      palette.forEach((g,i)=>{const t=document.createElement("div");t.className="t"+(i===0?" active":"");
+        t.innerHTML='<div style="height:100%;background:linear-gradient(135deg,'+g+')"></div>';thumbs.appendChild(t);});
+      gal.style.display="block";
+    } else { gal.style.display="none"; }
+  }
+
+  function renderTrack(c, copy){
+    const track=$("track"); track.innerHTML="";
+    const total=copy.steps.length;
+    const idx=Math.max(0,Math.min(c.current_index,total-1));
+    const pct=Math.round((idx/(total-1))*100);
+    const ph=document.createElement("div"); ph.className="progress-head";
+    ph.innerHTML='<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div>'
+      +'<span class="pct">Step '+(idx+1)+' of '+total+'</span>';
+    track.appendChild(ph);
+
+    copy.steps.forEach((s,i)=>{
+      const cls = i<c.current_index ? "done" : (i===c.current_index ? "current" : "");
+      const dot = i<c.current_index ? "&#10003;" : (i+1);
+      const badge = cls==="current" ? '<span class="badge">Happening now</span>' : "";
+      let detail="";
+      if(s.prep){ detail += '<div class="prep"><strong>What to prepare for</strong><ul>'+s.prep.map(p=>'<li>'+esc(p)+'</li>').join("")+'</ul></div>'; }
+      if(i < total-1){ detail += '<div class="whatsnext">Up next: <b>'+esc(copy.steps[i+1].t)+'</b></div>'; }
+      const hasDetail = detail!=="";
+      const chev = hasDetail ? '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>' : "";
+      let body = badge + '<h3>'+esc(s.t)+chev+'</h3><p>'+esc(s.d)+'</p>';
+      if(hasDetail){ body += '<div class="detail"><div class="inner">'+detail+'</div></div>'; }
+      const step=document.createElement("div"); step.className="step "+cls+(hasDetail?" tappable":"");
+      step.innerHTML='<div class="rail"><div class="dot">'+dot+'</div><div class="bar"></div></div><div class="body">'+body+'</div>';
+      if(hasDetail){
+        if(cls==="current") step.classList.add("open");
+        step.querySelector(".body").addEventListener("click",()=>step.classList.toggle("open"));
+      }
+      track.appendChild(step);
+    });
+  }
+
+  function renderClosed(c, copy){
+    $("celebHead").textContent=copy.celebHead;
+    $("celebSub").textContent=copy.celebSub;
+    $("equityHeader").textContent=copy.equityHeader;
+    const vals=[c.close_1,c.close_2,c.close_3,c.close_net];
+    const grid=$("statGrid"); grid.innerHTML="";
+    copy.statLabels.forEach((l,i)=>{
+      const el=document.createElement("div"); el.className="stat"+(i===3?" accent":"");
+      el.innerHTML='<span>'+l+'</span><b>'+(vals[i]||"")+'</b>'; grid.appendChild(el);
+    });
+    $("barLeftLbl").textContent=copy.barLeftLbl;
+    $("barValue").textContent=c.bar_value||"";
+    $("barLoan").style.width=(c.loan_pct||70)+"%";
+    $("barOwn").style.width=(c.own_pct||30)+"%";
+    $("keyLoan").textContent=copy.keyLoan;
+    $("keyOwn").textContent=copy.keyOwn;
+    $("ctaHead").textContent=copy.ctaHead;
+    $("ctaSub").textContent=copy.ctaSub;
+  }
+
+  function renderPortal(c){
+    const copy = COPY[c.role] || COPY.buyer;
+    $("greetHead").textContent = "Welcome back, "+c.client_name+".";
+    $("greetSub").textContent = copy.sub;
+    $("dealStatus").textContent = c.status_label || copy.defaultStatus;
+    $("propAddr").textContent = c.property_address || "";
+    $("propMeta").textContent = c.property_meta || "";
+    $("propPrice").textContent = c.property_price || "";
+    $("propPriceLbl").textContent = c.price_label || "";
+    renderGallery(c.photos, !configured);
+
+    if(c.phase === "closed"){
+      $("progressView").style.display="none";
+      $("equityView").style.display="block";
+      renderClosed(c, copy);
+    } else {
+      $("equityView").style.display="none";
+      $("progressView").style.display="block";
+      renderTrack(c, copy);
+    }
+    $("greet").style.display = c.phase==="closed" ? "none" : "block";
+    renderDates(c.key_dates);
+    renderDocs(c.documents);
+    renderActions(c.role||"buyer");
+    show("portalView");
+  }
+
+  function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+
+  function renderUpdates(list){
+    const sec=$("updatesSection"), wrap=$("updatesList");
+    if(!list || !list.length){ sec.style.display="none"; return; }
+    wrap.innerHTML="";
+    list.forEach(u=>{
+      const card=document.createElement("div"); card.className="update-card";
+      const dt=u.created_at ? new Date(u.created_at).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "";
+      card.innerHTML='<h4>'+esc(u.title)+'</h4>'+(dt?'<div class="date">'+dt+'</div>':'')+'<p>'+esc(u.body)+'</p>';
+      wrap.appendChild(card);
+    });
+    sec.style.display="block";
+  }
+
+  async function loadUpdates(sb){
+    try{
+      const { data, error } = await sb.from("updates").select("*").eq("published",true).order("created_at",{ascending:false}).limit(20);
+      if(error){ $("updatesSection").style.display="none"; return; }
+      renderUpdates(data);
+    }catch(e){ $("updatesSection").style.display="none"; }
+  }
+
+  function fmtDateParts(d){
+    const dt=new Date(d);
+    if(isNaN(dt.getTime())) return null;
+    return {m:dt.toLocaleDateString(undefined,{month:"short"}), day:dt.getDate(), t:dt.getTime(),
+            long:dt.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})};
+  }
+  function renderDates(list){
+    const sec=$("datesSection"), wrap=$("datesList");
+    if(!list || !list.length){ sec.style.display="none"; return; }
+    const items=list.slice().sort((a,b)=>{
+      const pa=fmtDateParts(a.date), pb=fmtDateParts(b.date);
+      return (pa?pa.t:Infinity)-(pb?pb.t:Infinity);
+    });
+    const now=Date.now();
+    wrap.innerHTML="";
+    items.forEach(it=>{
+      const p=fmtDateParts(it.date);
+      const soon = p && (p.t-now)>=-86400000 && (p.t-now) < 7*86400000;
+      const cal = p ? '<div class="cal"><span class="m">'+p.m+'</span><span class="d">'+p.day+'</span></div>'
+                    : '<div class="cal"><span class="d">&#9679;</span></div>';
+      const sub = (p?p.long:esc(it.date)) + (it.note? ' &middot; '+esc(it.note):'');
+      const row=document.createElement("div"); row.className="date-row"+(soon?" soon":"");
+      row.innerHTML=cal+'<div class="info"><b>'+esc(it.label||it.title||"")+'</b><span>'+sub+'</span></div>';
+      wrap.appendChild(row);
+    });
+    sec.style.display="block";
+  }
+  function renderDocs(list){
+    const sec=$("docsSection"), wrap=$("docsList");
+    if(!list || !list.length){ sec.style.display="none"; return; }
+    wrap.innerHTML="";
+    list.forEach(d=>{
+      const a=document.createElement("a"); a.className="doc-row";
+      a.href=d.url||"#"; if(d.url){ a.target="_blank"; a.rel="noopener"; }
+      a.innerHTML='<span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span><b>'+esc(d.label||d.title||"Document")+'</b><span class="arw">&rsaquo;</span>';
+      wrap.appendChild(a);
+    });
+    sec.style.display="block";
+  }
+  function renderActions(role){
+    const email="carsoncalin@livindyrealty.com";
+    const phone="+13179035973";
+    const mk=(label,subject,icon)=>'<a class="action-btn" href="mailto:'+email+'?subject='+encodeURIComponent(subject)+'"><span class="ic">'+icon+'</span>'+label+'</a>';
+    const msg='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+    const phoneI='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+    const home='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+    const q='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
+    let html='<a class="action-btn" href="sms:'+phone+'"><span class="ic">'+msg+'</span>Text Carson</a>';
+    html+='<a class="action-btn" href="tel:'+phone+'"><span class="ic">'+phoneI+'</span>Call Carson</a>';
+    if(role==="seller") html+=mk("Market update","Can I get an update on my listing?",home);
+    else html+=mk("Request a showing","I'd like to request a showing",home);
+    html+=mk("Ask a question","I have a question about my transaction",q);
+    $("actions").innerHTML=html;
+  }
+  function setupTabs(){
+    document.querySelectorAll("#tabs .tab").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        document.querySelectorAll("#tabs .tab").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        const target=btn.getAttribute("data-page");
+        ["pageHome","pageMore"].forEach(p=>{ $(p).style.display = (p===target)?"block":"none"; });
+        window.scrollTo({top:0,behavior:"smooth"});
+      });
+    });
+  }
+
+  /* ---------------- boot ---------------- */
+  async function boot(){
+    if(!configured){ renderPortal(DEMO); renderUpdates(SAMPLE_UPDATES); return; }
+    $("demoBanner").style.display="none";
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    show("loadingView");
+
+    const { data:{ session } } = await sb.auth.getSession();
+    if(!session){
+      show("loginView");
+      let pendingEmail = "";
+      async function sendCode(){
+        const email = $("loginEmail").value.trim();
+        if(!email) return;
+        $("loginBtn").textContent="Sending...";
+        const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true } });
+        $("loginBtn").textContent="Send me my code";
+        if(error){ alert("Something went wrong. Please try again."); return; }
+        pendingEmail = email;
+        $("emailStep").style.display="none";
+        $("codeStep").style.display="block";
+        $("loginSent").style.display="block";
+        $("loginCode").focus();
+      }
+      $("loginBtn").onclick = sendCode;
+      $("resendLink").onclick = (e)=>{ e.preventDefault(); $("emailStep").style.display="block"; sendCode(); };
+      $("verifyBtn").onclick = async ()=>{
+        const token = $("loginCode").value.trim();
+        if(!token) return;
+        $("verifyBtn").textContent="Signing in...";
+        const { error } = await sb.auth.verifyOtp({ email: pendingEmail, token, type:"email" });
+        if(error){ $("verifyBtn").textContent="Sign in"; alert("That code didn't work. Check it and try again, or tap Send again."); return; }
+        location.reload();
+      };
+      return;
+    }
+
+    const email = session.user.email;
+    const { data, error } = await sb.from("clients").select("*").ilike("email", email).maybeSingle();
+    if(error || !data){
+      $("loadingView").textContent = "We could not find a transaction tied to this email yet. Reach out to Carson and he will get you set up.";
+      show("loadingView"); return;
+    }
+    renderPortal(data);
+    loadUpdates(sb);
+  }
+
+  /* register the app service worker so clients can add it to their home screen */
+  if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+    navigator.serviceWorker.register("service-worker.js").catch(()=>{});
+  }
+
+  /* ---- add to home screen helpers ---- */
+  const isStandalone = window.navigator.standalone === true ||
+                       window.matchMedia("(display-mode: standalone)").matches;
+  // Android / desktop Chrome: real install button
+  let deferredPrompt = null;
+  window.addEventListener("beforeinstallprompt", (e)=>{
+    e.preventDefault(); deferredPrompt = e;
+    const tip = $("a2hsTip");
+    tip.innerHTML = '<button id="installBtn" style="margin-top:4px">Add to home screen</button>';
+    tip.style.display = "block";
+    $("installBtn").onclick = async ()=>{ tip.style.display="none"; deferredPrompt.prompt(); deferredPrompt=null; };
+  });
+  // iOS Safari: no auto prompt exists, so show a one-line tip
+  (function(){
+    const ua = window.navigator.userAgent.toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(ua);
+    if(isIOS && !isStandalone){
+      const tip = $("a2hsTip");
+      tip.textContent = "Tip: tap the Share icon, then “Add to Home Screen” to keep this one tap away.";
+      tip.style.display = "block";
+    }
+  })();
+
+  setupTabs();
+  boot();
+</script>
+</body>
+</html>
