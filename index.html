@@ -207,6 +207,7 @@
 <body>
 
   <div class="demo-banner" id="demoBanner">Preview mode. Add your Supabase keys in the CONFIG block to switch on real logins and live data.</div>
+  <div class="demo-banner" id="previewBanner" style="display:none"></div>
 
   <!-- LOGIN -->
   <div id="loginView">
@@ -699,11 +700,34 @@
     }
 
     const email = session.user.email;
+
+    /* admin-only: preview the portal exactly as one client sees it (?preview=<client-id>) */
+    const previewId = new URLSearchParams(location.search).get("preview");
+    if(previewId && email.toLowerCase()==="carsoncalin@livindyrealty.com"){
+      const { data:pc } = await sb.from("clients").select("*").eq("id",previewId).maybeSingle();
+      if(pc){
+        myDeals=[pc];
+        if(pc.cross_deal){ myDeals.push(Object.assign({ id:pc.id, client_name:pc.client_name }, pc.cross_deal)); }
+        renderSwitcher(0);
+        renderPortal(myDeals[0]);
+        loadUpdates(sb);
+        const pb=$("previewBanner");
+        pb.innerHTML='Previewing as <b>'+esc(pc.client_name||"client")+'</b> — this is exactly what they see. <a href="admin.html" style="color:inherit;font-weight:700">Back to admin</a>';
+        pb.style.display="block";
+        return; /* no visit logged, no footer */
+      }
+    }
+
     const { data, error } = await sb.from("clients").select("*").or("email.ilike."+email+",email2.ilike."+email).order("created_at",{ascending:true});
     const rows = data || [];
     if(error || !rows.length){
-      $("loadingView").textContent = "We could not find a transaction tied to this email yet. Reach out to Carson and he will get you set up.";
-      show("loadingView"); return;
+      $("loadingView").innerHTML = "We couldn't find a portal tied to <b>"+esc(email)+"</b> yet.<br><br>Double-check you signed in with the email Carson invited, or text him at <a href='sms:+13179035973' style='color:var(--teal-deep);font-weight:600'>(317) 903-5973</a>.<br><br><a href='#' id='retryEmail' style='color:var(--teal-deep);font-weight:600'>Try a different email</a>";
+      $("loadingView").style.textAlign="center";
+      $("loadingView").style.lineHeight="1.6";
+      $("loadingView").style.padding="0 30px";
+      show("loadingView");
+      document.getElementById("retryEmail").onclick=async (e)=>{ e.preventDefault(); await sb.auth.signOut(); location.href=location.pathname; };
+      return;
     }
     myDeals = [];
     rows.forEach(r=>{ myDeals.push(r); if(r.cross_deal){ myDeals.push(Object.assign({ id:r.id, client_name:r.client_name }, r.cross_deal)); } });

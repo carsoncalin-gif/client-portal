@@ -375,10 +375,14 @@
       const sub = esc(stageName(c)) + ' · ' + esc(c.status_label||"") + (ls? ' · seen '+ls : '');
       const arr=(c.role==="seller")?SELLER_STAGES:BUYER_STAGES;
       const canAdv = c.phase!=="closed" && (c.current_index||0) < arr.length-1;
-      const adv = canAdv ? '<button class="adv" title="Advance to next stage">&rarr;</button>' : '';
-      card.innerHTML='<div class="av">'+initial+'</div><div class="who"><b>'+esc(c.client_name||"(no name)")+'</b><span>'+sub+'</span></div>'+badge+adv;
+      const eye='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+      const prev='<button class="adv pv" title="Preview their portal">'+eye+'</button>';
+      const adv = canAdv ? '<button class="adv ad" title="Advance to next stage">&rarr;</button>' : '';
+      card.innerHTML='<div class="av">'+initial+'</div><div class="who"><b>'+esc(c.client_name||"(no name)")+'</b><span>'+sub+'</span></div>'+badge+prev+adv;
       card.onclick=()=>openEditor(c);
-      const ab=card.querySelector(".adv");
+      const pb=card.querySelector(".pv");
+      if(pb) pb.onclick=(e)=>{ e.stopPropagation(); window.open(PORTAL_URL+"?preview="+c.id, "_blank"); };
+      const ab=card.querySelector(".ad");
       if(ab) ab.onclick=(e)=>{ e.stopPropagation(); advanceStage(c); };
       wrap.appendChild(card);
     });
