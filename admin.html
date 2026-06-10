@@ -205,6 +205,7 @@
             <div class="field"><label>Stage (happening now)</label><select id="f_stage"></select></div>
             <div class="field"><label>Deal phase</label><select id="f_phase"><option value="active">Active</option><option value="closed">Closed</option></select></div>
           </div>
+          <div class="field" id="financingField"><label>Financing</label><select id="f_financing"><option value="financed">Financed (loan)</option><option value="cash">Cash</option></select><div class="hint">Cash buyers get a shorter roadmap — no appraisal or loan steps.</div></div>
         </div>
 
         <div class="card optcard">
@@ -286,9 +287,15 @@
   const PORTAL_URL = location.origin + "/";
 
   const BUYER_STAGES=["Game plan and approval","Touring and offers","Offer accepted","Inspection","Appraisal","Loan approval","Final walkthrough","Closing day"];
+  const CASH_STAGES=["Game plan and budget","Touring and offers","Offer accepted","Inspection","Title and closing prep","Final walkthrough","Closing day"];
   const SELLER_STAGES=["Listing prep","Live on market","Showings and offers","Offer accepted","Inspection and repairs","Appraisal","Buyer financing","Closing day"];
+  function stagesFor(role, financing){
+    if(role==="seller") return SELLER_STAGES;
+    return financing==="cash" ? CASH_STAGES : BUYER_STAGES;
+  }
   const CLOSE_LABELS={
     buyer:{c1:"Purchase price",c2:"Down payment",c3:"Original loan",cnet:"Equity today",bar:"Estimated home value"},
+    cash:{c1:"Purchase price",c2:"Cash invested",c3:"Closing costs",cnet:"Equity today",bar:"Estimated home value"},
     seller:{c1:"Final sale price",c2:"Loan payoff",c3:"Selling costs",cnet:"Net to you",bar:"Final sale price"}
   };
 
@@ -348,7 +355,7 @@
     renderList();
   }
   function stageName(c){
-    const arr=(c.role==="seller")?SELLER_STAGES:BUYER_STAGES;
+    const arr=stagesFor(c.role, c.financing);
     return arr[Math.max(0,Math.min(c.current_index||0,arr.length-1))];
   }
   let phaseFilter="all";
@@ -373,7 +380,7 @@
       const badge = c.phase==="closed" ? '<span class="badge closed">Closed</span>' : '<span class="badge">'+(c.role||"buyer")+'</span>';
       const ls = ago(lastSeen[c.id]);
       const sub = esc(stageName(c)) + ' · ' + esc(c.status_label||"") + (ls? ' · seen '+ls : '');
-      const arr=(c.role==="seller")?SELLER_STAGES:BUYER_STAGES;
+      const arr=stagesFor(c.role, c.financing);
       const canAdv = c.phase!=="closed" && (c.current_index||0) < arr.length-1;
       const eye='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
       const prev='<button class="adv pv" title="Preview their portal">'+eye+'</button>';
@@ -388,7 +395,7 @@
     });
   }
   async function advanceStage(c){
-    const arr=(c.role==="seller")?SELLER_STAGES:BUYER_STAGES;
+    const arr=stagesFor(c.role, c.financing);
     const next=Math.min((c.current_index||0)+1, arr.length-1);
     const { data, error } = await sb.from("clients").update({ current_index:next }).eq("id",c.id).select();
     if(error || !data || !data.length){ toast("Couldn't update — check your admin access."); return; }
@@ -473,13 +480,13 @@
   }
 
   /* ---------- editor ---------- */
-  function fillStageOptions(role, idx){
-    const arr=(role==="seller")?SELLER_STAGES:BUYER_STAGES;
+  function fillStageOptions(role, idx, financing){
+    const arr=stagesFor(role, financing);
     $("f_stage").innerHTML=arr.map((s,i)=>'<option value="'+i+'">'+i+' — '+esc(s)+'</option>').join("");
     $("f_stage").value=Math.max(0,Math.min(idx||0,arr.length-1));
   }
-  function applyCloseLabels(role){
-    const L=CLOSE_LABELS[role==="seller"?"seller":"buyer"];
+  function applyCloseLabels(role, financing){
+    const L=CLOSE_LABELS[role==="seller"?"seller":(financing==="cash"?"cash":"buyer")];
     $("lbl_c1").textContent=L.c1; $("lbl_c2").textContent=L.c2; $("lbl_c3").textContent=L.c3; $("lbl_cnet").textContent=L.cnet; $("lbl_bar").textContent=L.bar;
   }
   function rowSet(container, fields, items){
@@ -557,20 +564,20 @@
 
   let subDeals=[]; let activeSub=0;
   function blankDeal(role){
-    return { role:role, status_label:"", current_index:0, phase:"active",
+    return { role:role, financing:"financed", status_label:"", current_index:0, phase:"active",
       property_address:"", property_meta:"", property_price:"", price_label:"",
       photos:[], key_dates:[], documents:[],
       close_1:"", close_2:"", close_3:"", close_net:"", bar_value:"", loan_pct:70, own_pct:30 };
   }
   function dealFromRow(c, role){
-    return { role:role, status_label:c.status_label||"", current_index:c.current_index||0, phase:c.phase||"active",
+    return { role:role, financing:c.financing||"financed", status_label:c.status_label||"", current_index:c.current_index||0, phase:c.phase||"active",
       property_address:c.property_address||"", property_meta:c.property_meta||"", property_price:c.property_price||"", price_label:c.price_label||"",
       photos:c.photos||[], key_dates:c.key_dates||[], documents:c.documents||[],
       close_1:c.close_1||"", close_2:c.close_2||"", close_3:c.close_3||"", close_net:c.close_net||"",
       bar_value:c.bar_value||"", loan_pct:(c.loan_pct!=null?c.loan_pct:70), own_pct:(c.own_pct!=null?c.own_pct:30) };
   }
   function dealColumns(d){
-    return { role:d.role, status_label:d.status_label, current_index:d.current_index, phase:d.phase,
+    return { role:d.role, financing:d.financing||"financed", status_label:d.status_label, current_index:d.current_index, phase:d.phase,
       property_address:d.property_address, property_meta:d.property_meta, property_price:d.property_price, price_label:d.price_label,
       photos:d.photos, key_dates:d.key_dates, documents:d.documents,
       close_1:d.close_1, close_2:d.close_2, close_3:d.close_3, close_net:d.close_net,
@@ -579,7 +586,9 @@
   function dealToForm(d){
     $("f_status").value=d.status_label||"";
     $("f_phase").value=d.phase||"active";
-    fillStageOptions(d.role, d.current_index);
+    $("f_financing").value=d.financing||"financed";
+    $("financingField").style.display = d.role==="seller" ? "none" : "block";
+    fillStageOptions(d.role, d.current_index, d.financing);
     $("f_addr").value=d.property_address||"";
     $("f_meta").value=d.property_meta||"";
     $("f_price").value=d.property_price||"";
@@ -590,11 +599,11 @@
     $("f_c1").value=d.close_1||""; $("f_c2").value=d.close_2||""; $("f_c3").value=d.close_3||"";
     $("f_cnet").value=d.close_net||""; $("f_bar").value=d.bar_value||"";
     $("f_loanpct").value=(d.loan_pct!=null?d.loan_pct:70); $("f_ownpct").value=(d.own_pct!=null?d.own_pct:30);
-    applyCloseLabels(d.role);
+    applyCloseLabels(d.role, d.financing);
     $("closingCard").style.display = (d.phase==="closed") ? "block" : "none";
   }
   function formToDeal(role){
-    return { role:role, status_label:$("f_status").value.trim(), current_index:parseInt($("f_stage").value,10)||0, phase:$("f_phase").value,
+    return { role:role, financing:role==="seller"?"financed":$("f_financing").value, status_label:$("f_status").value.trim(), current_index:parseInt($("f_stage").value,10)||0, phase:$("f_phase").value,
       property_address:$("f_addr").value.trim(), property_meta:$("f_meta").value.trim(), property_price:$("f_price").value.trim(), price_label:$("f_pricelbl").value.trim(),
       photos:collectRows("photoRows").map(r=>r.url).filter(Boolean),
       key_dates:collectRows("dateRows"),
@@ -712,6 +721,14 @@
     dz2.addEventListener("drop",(e)=>{ e.preventDefault(); dz2.classList.remove("drag"); uploadDocs(e.dataTransfer.files); });
     $("f_role").onchange=onSideChange;
     $("f_phase").onchange=()=>{ $("closingCard").style.display = $("f_phase").value==="closed" ? "block" : "none"; };
+    $("f_financing").onchange=()=>{
+      const fin=$("f_financing").value, role=subDeals[activeSub]?subDeals[activeSub].role:"buyer";
+      fillStageOptions(role, parseInt($("f_stage").value,10)||0, fin);
+      applyCloseLabels(role, fin);
+      const lp=parseInt($("f_loanpct").value,10), op=parseInt($("f_ownpct").value,10);
+      if(fin==="cash" && lp===70 && op===30){ $("f_loanpct").value=0; $("f_ownpct").value=100; }
+      if(fin==="financed" && lp===0 && op===100){ $("f_loanpct").value=70; $("f_ownpct").value=30; }
+    };
     document.querySelectorAll("#subTabs .subtab").forEach(b=>b.onclick=()=>switchSub(parseInt(b.dataset.sub,10)));
     $("copyLink").onclick=async ()=>{
       try{ await navigator.clipboard.writeText(PORTAL_URL); toast("Portal link copied"); }

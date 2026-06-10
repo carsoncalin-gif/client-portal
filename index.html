@@ -398,6 +398,31 @@
     }
   };
 
+  /* cash buyers: shorter roadmap + cash labels */
+  const CASH_STEPS=[
+    {t:"Game plan and budget",d:"We mapped out your plan, set your budget, and we are ready to find your home.",
+      prep:["Have your proof of funds ready so offers move fast","Send me your must haves and your deal breakers","I line up tours the moment something fits"]},
+    {t:"Touring and offers",d:"We tour homes, weigh the options, and write your offer."},
+    {t:"Offer accepted",d:"Contract signed and earnest money delivered."},
+    {t:"Inspection",d:"We are reviewing the home with your inspector and deciding on any repair requests.",
+      prep:["Read the inspection summary I send over","Flag anything that worries you","We respond to the seller within the inspection window"]},
+    {t:"Title and closing prep",d:"Title work clears and your funds get arranged for closing day."},
+    {t:"Final walkthrough",d:"One last look to confirm the home is move in ready."},
+    {t:"Closing day",d:"You sign, you fund, and the keys are yours."}
+  ];
+  function copyFor(c){
+    const base = COPY[c.role] || COPY.buyer;
+    if(c.role!=="seller" && c.financing==="cash"){
+      return Object.assign({}, base, {
+        steps:CASH_STEPS,
+        statLabels:["Purchase price","Cash invested","Closing costs","Estimated equity today"],
+        keyLoan:"Remaining costs",
+        keyOwn:"Your equity"
+      });
+    }
+    return base;
+  }
+
   /* demo record used in preview mode */
   const DEMO = {
     client_name:"Maria", role:"buyer", phase:"active", status_label:"Under contract",
@@ -491,8 +516,8 @@
     });
     $("barLeftLbl").textContent=copy.barLeftLbl;
     $("barValue").textContent=c.bar_value||"";
-    $("barLoan").style.width=(c.loan_pct||70)+"%";
-    $("barOwn").style.width=(c.own_pct||30)+"%";
+    $("barLoan").style.width=(c.loan_pct!=null?c.loan_pct:70)+"%";
+    $("barOwn").style.width=(c.own_pct!=null?c.own_pct:30)+"%";
     $("keyLoan").textContent=copy.keyLoan;
     $("keyOwn").textContent=copy.keyOwn;
     $("ctaHead").textContent=copy.ctaHead;
@@ -500,7 +525,7 @@
   }
 
   function renderPortal(c){
-    const copy = COPY[c.role] || COPY.buyer;
+    const copy = copyFor(c);
     const hr=new Date().getHours();
     const hello = hr<12 ? "Good morning" : hr<17 ? "Good afternoon" : "Good evening";
     $("greetHead").textContent = hello+", "+c.client_name+".";
