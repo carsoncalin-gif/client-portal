@@ -274,6 +274,7 @@
 
       <!-- DURING THE DEAL -->
       <div id="progressView">
+        <div id="nextUp" style="display:none"></div>
         <div class="section-h">Your roadmap</div>
         <div id="track"></div>
       </div>
@@ -499,7 +500,9 @@
 
   function renderPortal(c){
     const copy = COPY[c.role] || COPY.buyer;
-    $("greetHead").textContent = "Welcome back, "+c.client_name+".";
+    const hr=new Date().getHours();
+    const hello = hr<12 ? "Good morning" : hr<17 ? "Good afternoon" : "Good evening";
+    $("greetHead").textContent = hello+", "+c.client_name+".";
     $("greetSub").textContent = copy.sub;
     $("dealStatus").textContent = c.status_label || copy.defaultStatus;
     const searching = c.role!=="seller" && !c.property_address;
@@ -516,6 +519,7 @@
     } else {
       $("equityView").style.display="none";
       $("progressView").style.display="block";
+      renderNextUp(c.key_dates);
       renderTrack(c, copy);
     }
     $("greet").style.display = c.phase==="closed" ? "none" : "block";
@@ -554,6 +558,29 @@
     return {m:dt.toLocaleDateString(undefined,{month:"short"}), day:dt.getDate(), t:dt.getTime(),
             long:dt.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})};
   }
+  function countdown(t){
+    const days=Math.ceil((t-Date.now())/86400000);
+    if(days<0) return "";
+    if(days===0) return "Today";
+    if(days===1) return "Tomorrow";
+    if(days<=30) return "In "+days+" days";
+    return "";
+  }
+  function renderNextUp(list){
+    const el=$("nextUp");
+    let best=null;
+    (list||[]).forEach(it=>{
+      const p=fmtDateParts(it.date);
+      if(p && (p.t-Date.now())>=-43200000 && (!best||p.t<best.p.t)) best={it,p};
+    });
+    if(!best){ el.style.display="none"; return; }
+    const cd=countdown(best.p.t);
+    const sub=best.p.long + (cd? ' &middot; '+cd:'') + (best.it.note? ' &middot; '+esc(best.it.note):'');
+    el.innerHTML='<div class="section-h">Coming up</div>'
+      +'<div class="date-row soon"><div class="cal"><span class="m">'+best.p.m+'</span><span class="d">'+best.p.day+'</span></div>'
+      +'<div class="info"><b>'+esc(best.it.label||"")+'</b><span>'+sub+'</span></div></div>';
+    el.style.display="block";
+  }
   function renderDates(list){
     const sec=$("datesSection"), wrap=$("datesList");
     if(!list || !list.length){ sec.style.display="none"; return; }
@@ -568,7 +595,8 @@
       const soon = p && (p.t-now)>=-86400000 && (p.t-now) < 7*86400000;
       const cal = p ? '<div class="cal"><span class="m">'+p.m+'</span><span class="d">'+p.day+'</span></div>'
                     : '<div class="cal"><span class="d">&#9679;</span></div>';
-      const sub = (p?p.long:esc(it.date)) + (it.note? ' &middot; '+esc(it.note):'');
+      const cd = p ? countdown(p.t) : "";
+      const sub = (p?p.long:esc(it.date)) + (cd? ' &middot; '+cd:'') + (it.note? ' &middot; '+esc(it.note):'');
       const row=document.createElement("div"); row.className="date-row"+(soon?" soon":"");
       row.innerHTML=cal+'<div class="info"><b>'+esc(it.label||it.title||"")+'</b><span>'+sub+'</span></div>';
       wrap.appendChild(row);

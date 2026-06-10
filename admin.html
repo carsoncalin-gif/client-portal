@@ -60,6 +60,9 @@
   .client-card .badge.closed{background:#eaf6ef;color:var(--green)}
   .client-card .adv{flex:none;width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--teal-deep);font-size:17px;font-weight:700;margin-left:8px;cursor:pointer}
   .client-card .adv:hover{background:var(--teal-wash);border-color:var(--teal)}
+  .chips{display:flex;gap:8px;margin-bottom:12px}
+  .chip{border:1px solid var(--line);background:var(--card);font-family:inherit;font-weight:600;font-size:12.5px;color:var(--ink-soft);padding:8px 14px;border-radius:999px;cursor:pointer;transition:.15s}
+  .chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
   .subtabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;margin:6px 0 14px}
   .subtab{flex:1;border:0;background:transparent;font-family:inherit;font-weight:600;font-size:13px;color:var(--ink-soft);padding:9px;border-radius:9px;cursor:pointer}
   .subtab.active{background:var(--ink);color:#fff}
@@ -74,6 +77,11 @@
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
   .card h3{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;margin-bottom:14px}
+  .card.optcard h3{cursor:pointer;user-select:none}
+  .card.optcard h3::after{content:"\2212";float:right;color:var(--ink-soft);font-weight:600;font-size:15px;line-height:1}
+  .card.optcard.collapsed h3{margin-bottom:0}
+  .card.optcard.collapsed h3::after{content:"+"}
+  .card.optcard.collapsed > *:not(h3){display:none}
   .rowset .ritem{display:flex;gap:8px;margin-bottom:8px;align-items:center}
   .rowset .ritem input{flex:1}
   .rowset .x{flex:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--red);font-size:18px;line-height:1}
@@ -137,12 +145,43 @@
 
       <!-- LIST -->
       <div id="listView">
-        <div class="list-head">
-          <h2>Your clients</h2>
-          <button class="btn sm" id="newClient">+ New client</button>
+        <div class="subtabs" id="mainTabs">
+          <button type="button" class="subtab active" data-tab="clients">Clients</button>
+          <button type="button" class="subtab" data-tab="updates">Updates</button>
         </div>
-        <input id="searchBox" placeholder="Search by name, email, or address…" style="margin-bottom:14px">
-        <div id="clientList"></div>
+
+        <div id="clientsPane">
+          <div class="list-head">
+            <h2>Your clients</h2>
+            <button class="btn sm" id="newClient">+ New client</button>
+          </div>
+          <input id="searchBox" placeholder="Search by name, email, or address…" style="margin-bottom:12px">
+          <div class="chips" id="phaseChips">
+            <button type="button" class="chip active" data-f="all">All</button>
+            <button type="button" class="chip" data-f="active">Active</button>
+            <button type="button" class="chip" data-f="closed">Closed</button>
+          </div>
+          <div id="clientList"></div>
+        </div>
+
+        <div id="updatesPane" style="display:none">
+          <div class="list-head">
+            <h2>Updates</h2>
+            <button class="btn sm" id="newUpdate">+ New update</button>
+          </div>
+          <div class="card" id="updEditor" style="display:none">
+            <h3 id="updEdTitle">New update</h3>
+            <div class="field"><label>Title</label><input id="u_title" placeholder="Rates dipped this week"></div>
+            <div class="field"><label>Message</label><textarea id="u_body" rows="4" placeholder="A quick note every signed-in client will see…"></textarea></div>
+            <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:14px;font-weight:500;color:var(--ink)"><input type="checkbox" id="u_pub" checked style="width:auto"> Visible to clients</label></div>
+            <div style="display:flex;gap:10px">
+              <button class="btn ghost" id="updCancel" style="flex:1">Cancel</button>
+              <button class="btn" id="updSave" style="flex:1">Post</button>
+            </div>
+          </div>
+          <div id="updList"></div>
+          <div class="hint" style="margin-top:10px">Updates are news and tips shown to every signed-in client on their Dates &amp; Updates tab. Hide one to take it down without deleting it.</div>
+        </div>
       </div>
 
       <!-- EDITOR -->
@@ -168,7 +207,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card optcard">
           <h3>Property</h3>
           <div class="field"><label>Address</label><input id="f_addr" placeholder="7419 Sylvan Ridge Road"></div>
           <div class="field"><label>Details</label><input id="f_meta" placeholder="Indianapolis, IN 46240 · 3 bed · 2 bath"></div>
@@ -178,7 +217,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card optcard">
           <h3>Photos</h3>
           <div class="dropzone" id="dropzone">
             <input type="file" id="photoFile" accept="image/*" multiple style="display:none">
@@ -190,13 +229,13 @@
           <div class="hint" style="margin-top:10px">First photo is the hero. Drag-drop, upload from your phone, or paste a URL.</div>
         </div>
 
-        <div class="card">
+        <div class="card optcard">
           <h3>Important dates</h3>
           <div class="rowset" id="dateRows"></div>
           <button class="addrow" id="addDate">+ Add date</button>
         </div>
 
-        <div class="card">
+        <div class="card optcard">
           <h3>Documents</h3>
           <div class="dropzone" id="docZone">
             <input type="file" id="docFile" accept=".pdf,.doc,.docx,image/*" multiple style="display:none">
@@ -312,15 +351,20 @@
     const arr=(c.role==="seller")?SELLER_STAGES:BUYER_STAGES;
     return arr[Math.max(0,Math.min(c.current_index||0,arr.length-1))];
   }
+  let phaseFilter="all";
   function renderList(){
     const wrap=$("clientList");
     if(!clients.length){ wrap.innerHTML='<div class="empty">No clients yet. Tap "+ New client" to add your first.</div>'; return; }
     const q=($("searchBox").value||"").toLowerCase().trim();
-    const list=clients.filter(c=> !q
-      || (c.client_name||"").toLowerCase().includes(q)
-      || (c.email||"").toLowerCase().includes(q)
-      || (c.email2||"").toLowerCase().includes(q)
-      || (c.property_address||"").toLowerCase().includes(q));
+    const list=clients.filter(c=>{
+      if(phaseFilter==="active" && c.phase==="closed") return false;
+      if(phaseFilter==="closed" && c.phase!=="closed") return false;
+      return !q
+        || (c.client_name||"").toLowerCase().includes(q)
+        || (c.email||"").toLowerCase().includes(q)
+        || (c.email2||"").toLowerCase().includes(q)
+        || (c.property_address||"").toLowerCase().includes(q);
+    });
     if(!list.length){ wrap.innerHTML='<div class="empty">No matches.</div>'; return; }
     wrap.innerHTML="";
     list.forEach(c=>{
@@ -348,6 +392,81 @@
     await loadClients();
   }
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+
+  /* ---------- updates manager ---------- */
+  let updates=[]; let updatesLoaded=false; let editingUpdId=null;
+  function switchMainTab(tab){
+    document.querySelectorAll("#mainTabs .subtab").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
+    $("clientsPane").style.display = tab==="clients" ? "block" : "none";
+    $("updatesPane").style.display = tab==="updates" ? "block" : "none";
+    if(tab==="updates" && !updatesLoaded) loadUpdates();
+  }
+  async function loadUpdates(){
+    const { data, error } = await sb.from("updates").select("*").order("created_at",{ascending:false});
+    if(error){ $("updList").innerHTML='<div class="empty">Could not load updates.</div>'; return; }
+    updates=data||[]; updatesLoaded=true; renderUpdates();
+  }
+  function renderUpdates(){
+    const wrap=$("updList");
+    if(!updates.length){ wrap.innerHTML='<div class="empty">No updates yet. Tap "+ New update" to post your first.</div>'; return; }
+    wrap.innerHTML="";
+    updates.forEach(u=>{
+      const card=document.createElement("div"); card.className="client-card";
+      const date=new Date(u.created_at).toLocaleDateString(undefined,{month:"short",day:"numeric"});
+      const badge=u.published ? '<span class="badge closed">Live</span>' : '<span class="badge" style="background:#f7ead8;color:var(--gold)">Hidden</span>';
+      const preview=(u.body||"").length>70 ? u.body.slice(0,70)+"…" : (u.body||"");
+      card.innerHTML='<div class="who" style="min-width:0"><b>'+esc(u.title)+'</b><span>'+date+' · '+esc(preview)+'</span></div>'+badge
+        +'<button class="adv" data-act="toggle" title="'+(u.published?"Hide from clients":"Make visible")+'">'+(u.published?"&#9679;":"&#9675;")+'</button>'
+        +'<button class="adv" data-act="del" title="Delete" style="color:var(--red)">&times;</button>';
+      card.onclick=()=>openUpdEditor(u);
+      card.querySelector('[data-act="toggle"]').onclick=async (e)=>{
+        e.stopPropagation();
+        const { error } = await sb.from("updates").update({ published:!u.published }).eq("id",u.id);
+        if(error){ toast("Couldn't update."); return; }
+        toast(u.published ? "Hidden from clients" : "Now visible to clients");
+        loadUpdates();
+      };
+      card.querySelector('[data-act="del"]').onclick=async (e)=>{
+        e.stopPropagation();
+        if(!confirm("Delete this update for good?")) return;
+        const { error } = await sb.from("updates").delete().eq("id",u.id);
+        if(error){ toast("Delete failed."); return; }
+        toast("Deleted"); loadUpdates();
+      };
+      wrap.appendChild(card);
+    });
+  }
+  function openUpdEditor(u){
+    editingUpdId = u ? u.id : null;
+    $("updEdTitle").textContent = u ? "Edit update" : "New update";
+    $("u_title").value = u ? u.title : "";
+    $("u_body").value = u ? u.body : "";
+    $("u_pub").checked = u ? !!u.published : true;
+    $("updSave").textContent = u ? "Save" : "Post";
+    $("updEditor").style.display="block";
+    $("u_title").focus();
+    window.scrollTo({top:0});
+  }
+  function closeUpdEditor(){ $("updEditor").style.display="none"; editingUpdId=null; }
+  async function saveUpdate(){
+    const title=$("u_title").value.trim(), body=$("u_body").value.trim();
+    if(!title || !body){ toast("Title and message are required."); return; }
+    const row={ title, body, published:$("u_pub").checked };
+    $("updSave").textContent="Saving...";
+    const res = editingUpdId
+      ? await sb.from("updates").update(row).eq("id",editingUpdId).select()
+      : await sb.from("updates").insert(row).select();
+    $("updSave").textContent = editingUpdId ? "Save" : "Post";
+    if(res.error){ toast("Save failed: "+res.error.message); return; }
+    toast(editingUpdId ? "Saved" : "Posted — clients will see it");
+    closeUpdEditor(); loadUpdates();
+  }
+  function wireUpdates(){
+    document.querySelectorAll("#mainTabs .subtab").forEach(b=>b.onclick=()=>switchMainTab(b.dataset.tab));
+    $("newUpdate").onclick=()=>openUpdEditor(null);
+    $("updCancel").onclick=closeUpdEditor;
+    $("updSave").onclick=saveUpdate;
+  }
 
   /* ---------- editor ---------- */
   function fillStageOptions(role, idx){
@@ -521,6 +640,7 @@
     }
     activeSub=0; applyMode();
     dealToForm(subDeals[0]);
+    document.querySelectorAll(".optcard").forEach(el=>el.classList.toggle("collapsed", !c));
     $("deleteBtn").style.display = c ? "inline-flex" : "none";
     $("listView").style.display="none"; $("editView").style.display="block";
     window.scrollTo({top:0});
@@ -535,9 +655,18 @@
     }
     return Object.assign({}, person, dealColumns(subDeals[0]), { cross_deal: null });
   }
+  function inviteMsg(){
+    const name=$("f_name").value.trim()||"there";
+    const email=$("f_email").value.trim();
+    const noun=$("f_role").value==="seller"?"home sale":"home purchase";
+    return "Hi "+name+"! I set up a private portal so you can follow your "+noun+" every step of the way — where things stand, what's next, photos, and key dates.\n\nOpen this link: "+PORTAL_URL+"\nEnter your email"+(email?" ("+email+")":"")+" and you'll get a secure 6-digit code to sign in — no password to remember.\n\nTip: once you're in, tap your phone browser's Share button and \"Add to Home Screen\" so it lives like an app.\n\n— Carson";
+  }
   async function save(){
     const data=collect();
     if(!data.client_name || !data.email){ toast("Name and email are required."); return; }
+    const isNew=!editingId;
+    let invited=false;
+    if(isNew){ try{ await navigator.clipboard.writeText(inviteMsg()); invited=true; }catch(e){} }
     $("saveBtn").textContent="Saving...";
     let res;
     if(editingId){ res=await sb.from("clients").update(data).eq("id",editingId).select(); }
@@ -545,7 +674,8 @@
     $("saveBtn").textContent="Save";
     if(res.error){ toast("Save failed: "+res.error.message); return; }
     if(!res.data || !res.data.length){ toast("Nothing saved — run admin_policies.sql so your account can edit."); return; }
-    toast("Saved"); await loadClients(); backToList();
+    toast(isNew && invited ? "Saved — invite copied, paste it into a text" : "Saved");
+    await loadClients(); backToList();
   }
   async function del(){
     if(!editingId) return;
@@ -584,13 +714,15 @@
       catch(e){ toast(PORTAL_URL); }
     };
     $("copyInvite").onclick=async ()=>{
-      const name=$("f_name").value.trim()||"there";
-      const email=$("f_email").value.trim();
-      const noun=$("f_role").value==="seller"?"home sale":"home purchase";
-      const msg="Hi "+name+"! I set up a private portal so you can follow your "+noun+" every step of the way — where things stand, what's next, photos, and key dates.\n\nOpen this link: "+PORTAL_URL+"\nEnter your email"+(email?" ("+email+")":"")+" and you'll get a secure 6-digit code to sign in — no password to remember.\n\nTip: once you're in, tap your phone browser's Share button and \"Add to Home Screen\" so it lives like an app.\n\n— Carson";
-      try{ await navigator.clipboard.writeText(msg); toast("Invite message copied"); }
+      try{ await navigator.clipboard.writeText(inviteMsg()); toast("Invite message copied"); }
       catch(e){ toast("Copy failed"); }
     };
+    document.querySelectorAll(".optcard h3").forEach(h=>h.onclick=()=>h.parentElement.classList.toggle("collapsed"));
+    document.querySelectorAll("#phaseChips .chip").forEach(b=>b.onclick=()=>{
+      phaseFilter=b.dataset.f;
+      document.querySelectorAll("#phaseChips .chip").forEach(x=>x.classList.toggle("active",x===b));
+      renderList();
+    });
     $("signOut").onclick=async ()=>{ await sb.auth.signOut(); location.reload(); };
     $("searchBox").oninput=renderList;
     $("setPw").onclick=async ()=>{
@@ -604,7 +736,7 @@
 
   /* ---------- boot ---------- */
   async function boot(){
-    wireLogin(); wireEditor();
+    wireLogin(); wireEditor(); wireUpdates();
     const { data:{ session } } = await sb.auth.getSession();
     if(!session){ show("loginView"); return; }
     show("adminView");
