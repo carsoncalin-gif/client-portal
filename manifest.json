@@ -1,7 +1,7 @@
 {
-  "name": "Your Home Portal",
-  "short_name": "Home Portal",
-  "description": "Track your home purchase or sale with Carson Calin Real Estate.",
+  "name": "Carson's Concierge",
+  "short_name": "Concierge",
+  "description": "Follow your home purchase or sale with Carson Calin Real Estate.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f5f1ea",

@@ -291,6 +291,8 @@
   const SUPABASE_ANON_KEY = "sb_publishable_niTtBPiLg9trvKnZXwXGhA_uQ_Ry9lZ";
   const ADMIN_EMAIL = "carsoncalin@livindyrealty.com";
   const PORTAL_URL = location.origin + "/";
+  /* clean label for texts and emails. A bare host autolinks in iOS and Android messages. */
+  const PORTAL_LABEL = location.host;
 
   const BUYER_STAGES=["Game plan and approval","Touring and offers","Offer accepted","Inspection","Appraisal","Loan approval","Final walkthrough","Closing day"];
   const CASH_STAGES=["Game plan and budget","Touring and offers","Offer accepted","Inspection","Title and closing prep","Final walkthrough","Closing day"];
@@ -713,7 +715,7 @@
     const email=$("f_email").value.trim();
     const role=$("f_role").value;
     const noun = role==="seller" ? "home sale" : role==="both" ? "move" : "home purchase";
-    return "Hi "+name+"! I set up a private portal so you can follow your "+noun+" every step of the way. Where things stand, what is next, photos, and key dates, all in one place.\n\nOpen this link: "+PORTAL_URL+"\nEnter your email"+(email?" ("+email+")":"")+" and you'll get a secure 6-digit code to sign in. No password to remember.\n\nOnce you are in, tap your phone's Share button and \"Add to Home Screen\" so it lives like an app.\n\nCarson";
+    return "Hi "+name+"! I set up Carson's Concierge for you, a private portal where you can follow your "+noun+" every step of the way. Where things stand, what is next, photos, key dates, and your documents, all in one place.\n\n"+PORTAL_LABEL+"\n\nEnter your email"+(email?" ("+email+")":"")+" and you'll get a secure 6-digit code to sign in. No password to remember.\n\nWhen you open it, it will show you how to save it to your home screen so it sits there like an app.\n\nCarson";
   }
   async function save(){
     const data=collect();
