@@ -147,7 +147,7 @@
       <div id="listView">
         <div class="subtabs" id="mainTabs">
           <button type="button" class="subtab active" data-tab="clients">Clients</button>
-          <button type="button" class="subtab" data-tab="updates">Updates</button>
+          <button type="button" class="subtab" data-tab="updates">Messages</button>
         </div>
 
         <div id="clientsPane">
@@ -166,13 +166,24 @@
 
         <div id="updatesPane" style="display:none">
           <div class="list-head">
-            <h2>Updates</h2>
-            <button class="btn sm" id="newUpdate">+ New update</button>
+            <h2>Messages</h2>
+            <button class="btn sm" id="newUpdate">+ New message</button>
           </div>
           <div class="card" id="updEditor" style="display:none">
-            <h3 id="updEdTitle">New update</h3>
-            <div class="field"><label>Title</label><input id="u_title" placeholder="Rates dipped this week"></div>
-            <div class="field"><label>Message</label><textarea id="u_body" rows="4" placeholder="A quick note every signed-in client will see…"></textarea></div>
+            <h3 id="updEdTitle">New message</h3>
+            <div class="field"><label>Send to</label>
+              <select id="u_client"><option value="">Everyone</option></select>
+              <div class="hint">Everyone posts to all your clients. Pick one client and only that transaction sees it. Both people on a deal always see the same message.</div>
+            </div>
+            <div class="field" id="u_sideField" style="display:none"><label>Which deal</label>
+              <select id="u_side">
+                <option value="">Both of their deals</option>
+                <option value="buyer">Their purchase only</option>
+                <option value="seller">Their sale only</option>
+              </select>
+            </div>
+            <div class="field"><label>Title</label><input id="u_title" placeholder="Inspection went well"></div>
+            <div class="field"><label>Message</label><textarea id="u_body" rows="4" placeholder="A short note in your own voice…"></textarea></div>
             <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:14px;font-weight:500;color:var(--ink)"><input type="checkbox" id="u_pub" checked style="width:auto"> Visible to clients</label></div>
             <div style="display:flex;gap:10px">
               <button class="btn ghost" id="updCancel" style="flex:1">Cancel</button>
@@ -180,7 +191,7 @@
             </div>
           </div>
           <div id="updList"></div>
-          <div class="hint" style="margin-top:10px">Updates are news and tips shown to every signed-in client on their Dates &amp; Updates tab. Hide one to take it down without deleting it.</div>
+          <div class="hint" style="margin-top:10px">A message sent to Everyone reaches all your clients. A message sent to one client appears pinned at the top of their portal, right under their address. Hide one to take it down without deleting it.</div>
         </div>
       </div>
 
@@ -212,6 +223,12 @@
           <h3>What they chose</h3>
           <div id="prefsView" style="font-size:13.5px;line-height:1.5"></div>
           <div class="hint" style="margin-top:10px">Each person sets this themselves from their own portal. You cannot change it for them, you can only see it.</div>
+        </div>
+
+        <div class="card">
+          <h3>Message</h3>
+          <button class="btn ghost" id="msgClient">Send this client a message</button>
+          <div class="hint" style="margin-top:10px">Posts a note pinned to the top of their portal, under their address. Both people on the deal see the same message.</div>
         </div>
 
         <div class="card optcard">
@@ -463,16 +480,25 @@
     if(error){ $("updList").innerHTML='<div class="empty">Could not load updates.</div>'; return; }
     updates=data||[]; updatesLoaded=true; renderUpdates();
   }
+  function clientNameById(id){
+    const c=clients.find(x=>x.id===id);
+    return c ? (c.client_name||"(no name)") : "a removed client";
+  }
+  function recipientLabel(u){
+    if(!u.client_id) return "Everyone";
+    const side = u.deal_side==="seller" ? " · sale" : u.deal_side==="buyer" ? " · purchase" : "";
+    return clientNameById(u.client_id)+side;
+  }
   function renderUpdates(){
     const wrap=$("updList");
-    if(!updates.length){ wrap.innerHTML='<div class="empty">No updates yet. Tap "+ New update" to post your first.</div>'; return; }
+    if(!updates.length){ wrap.innerHTML='<div class="empty">No messages yet. Tap "+ New message" to post your first.</div>'; return; }
     wrap.innerHTML="";
     updates.forEach(u=>{
       const card=document.createElement("div"); card.className="client-card";
       const date=new Date(u.created_at).toLocaleDateString(undefined,{month:"short",day:"numeric"});
       const badge=u.published ? '<span class="badge closed">Live</span>' : '<span class="badge" style="background:#f7ead8;color:var(--gold)">Hidden</span>';
-      const preview=(u.body||"").length>70 ? u.body.slice(0,70)+"…" : (u.body||"");
-      card.innerHTML='<div class="who" style="min-width:0"><b>'+esc(u.title)+'</b><span>'+date+' · '+esc(preview)+'</span></div>'+badge
+      const preview=(u.body||"").length>60 ? u.body.slice(0,60)+"…" : (u.body||"");
+      card.innerHTML='<div class="who" style="min-width:0"><b>'+esc(u.title)+'</b><span>'+esc(recipientLabel(u))+' · '+date+' · '+esc(preview)+'</span></div>'+badge
         +'<button class="adv" data-act="toggle" title="'+(u.published?"Hide from clients":"Make visible")+'">'+(u.published?"&#9679;":"&#9675;")+'</button>'
         +'<button class="adv" data-act="del" title="Delete" style="color:var(--red)">&times;</button>';
       card.onclick=()=>openUpdEditor(u);
@@ -493,9 +519,29 @@
       wrap.appendChild(card);
     });
   }
+  function fillUpdClients(){
+    const sel=$("u_client");
+    const active=clients.filter(c=>c.phase!=="closed");
+    const closed=clients.filter(c=>c.phase==="closed");
+    let html='<option value="">Everyone</option>';
+    active.forEach(c=>{ html+='<option value="'+esc(c.id)+'">'+esc(c.client_name||"(no name)")+'</option>'; });
+    closed.forEach(c=>{ html+='<option value="'+esc(c.id)+'">'+esc(c.client_name||"(no name)")+' (closed)</option>'; });
+    sel.innerHTML=html;
+  }
+  function onUpdClientChange(){
+    const id=$("u_client").value;
+    const c=clients.find(x=>x.id===id);
+    const both=!!(c && c.cross_deal);
+    $("u_sideField").style.display = both ? "block" : "none";
+    if(!both) $("u_side").value="";
+  }
   function openUpdEditor(u){
     editingUpdId = u ? u.id : null;
-    $("updEdTitle").textContent = u ? "Edit update" : "New update";
+    $("updEdTitle").textContent = u ? "Edit message" : "New message";
+    fillUpdClients();
+    $("u_client").value = (u && u.client_id) ? u.client_id : "";
+    onUpdClientChange();
+    $("u_side").value = (u && u.deal_side) ? u.deal_side : "";
     $("u_title").value = u ? u.title : "";
     $("u_body").value = u ? u.body : "";
     $("u_pub").checked = u ? !!u.published : true;
@@ -508,14 +554,17 @@
   async function saveUpdate(){
     const title=$("u_title").value.trim(), body=$("u_body").value.trim();
     if(!title || !body){ toast("Title and message are required."); return; }
-    const row={ title, body, published:$("u_pub").checked };
+    const cid=$("u_client").value || null;
+    const row={ title, body, published:$("u_pub").checked,
+                client_id: cid,
+                deal_side: cid ? ($("u_side").value || null) : null };
     $("updSave").textContent="Saving...";
     const res = editingUpdId
       ? await sb.from("updates").update(row).eq("id",editingUpdId).select()
       : await sb.from("updates").insert(row).select();
     $("updSave").textContent = editingUpdId ? "Save" : "Post";
     if(res.error){ toast("Save failed: "+res.error.message); return; }
-    toast(editingUpdId ? "Saved" : "Posted, clients will see it");
+    toast(editingUpdId ? "Saved" : (cid ? "Posted to "+clientNameById(cid) : "Posted to everyone"));
     closeUpdEditor(); loadUpdates();
   }
   function wireUpdates(){
@@ -523,6 +572,7 @@
     $("newUpdate").onclick=()=>openUpdEditor(null);
     $("updCancel").onclick=closeUpdEditor;
     $("updSave").onclick=saveUpdate;
+    $("u_client").onchange=onUpdClientChange;
   }
 
   /* ---------- editor ---------- */
@@ -795,6 +845,17 @@
     $("f_role").onchange=onSideChange;
     $("f_email").oninput=renderPrefsView;
     $("f_email2").oninput=renderPrefsView;
+    $("msgClient").onclick=async ()=>{
+      if(!editingId){ toast("Save the client once first, then message them."); return; }
+      const id=editingId;
+      backToList();
+      switchMainTab("updates");
+      if(!updatesLoaded) await loadUpdates();
+      openUpdEditor(null);
+      $("u_client").value=id;
+      onUpdClientChange();
+      $("u_title").focus();
+    };
     $("f_phase").onchange=()=>{ $("closingCard").style.display = $("f_phase").value==="closed" ? "block" : "none"; };
     $("f_financing").onchange=()=>{
       const fin=$("f_financing").value, role=subDeals[activeSub]?subDeals[activeSub].role:"buyer";

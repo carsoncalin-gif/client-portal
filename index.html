@@ -128,11 +128,25 @@
   .step .detail .inner{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
   .step .whatsnext{font-size:12.5px;color:var(--ink-soft);margin-top:10px}
   .step .whatsnext b{color:var(--teal-deep);font-weight:600}
+  /* a note from Carson, pinned under the property card */
+  .note-card{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);
+    border-radius:16px;padding:16px 18px;margin:0 0 18px;box-shadow:var(--shadow)}
+  .note-card .from{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+  .note-card .from .av{flex:none;width:26px;height:26px;border-radius:8px;background:var(--teal);
+    color:#04282c;display:grid;place-items:center;font-family:'Fraunces',serif;font-weight:700;font-size:13px}
+  .note-card .from .who{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+  .note-card .from .when{margin-left:auto;font-size:11.5px;color:var(--ink-soft);white-space:nowrap}
+  .note-card h4{font-family:'Fraunces',serif;font-weight:600;font-size:17px;line-height:1.25;margin-bottom:5px}
+  .note-card p{font-size:14px;color:var(--ink-soft);line-height:1.55;white-space:pre-wrap}
+
   /* updates feed */
   .update-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow)}
   .update-card h4{font-family:'Fraunces',serif;font-weight:600;font-size:17px}
   .update-card .date{font-size:11.5px;color:var(--ink-soft);letter-spacing:.04em;text-transform:uppercase;margin-top:3px}
   .update-card p{font-size:14px;color:var(--ink-soft);line-height:1.5;margin-top:9px;white-space:pre-wrap}
+  .update-card.mine{border-left:3px solid var(--gold)}
+  .update-card .foryou{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--gold);background:#faf1e4;padding:3px 9px;border-radius:999px;margin-bottom:8px}
 
   /* deal switcher (clients doing both buy + sell) */
   .dealswitch{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
@@ -425,6 +439,8 @@
         <button type="button" id="revealNums">Show them</button>
       </div>
 
+      <div class="note-card" id="pinnedNote" style="display:none"></div>
+
       <a id="listingBtn" class="listing-btn" href="#" target="_blank" rel="noopener" style="display:none">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7" /><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10" /></svg>
         <span>View your listing</span>
@@ -593,7 +609,7 @@
 
   /* demo record used in preview mode */
   const DEMO = {
-    client_name:"Maria", role:"buyer", phase:"active", status_label:"Under contract",
+    id:"demo", client_name:"Maria", role:"buyer", phase:"active", status_label:"Under contract",
     property_address:"7419 Sylvan Ridge Road", property_meta:"Indianapolis, IN 46240 · 3 bed · 2 bath",
     property_price:"$310,000", price_label:"Purchase price", current_index:3, photos:[],
     listing_url:"https://carsoncalin.com/mockernut",
@@ -613,9 +629,12 @@
 
   /* sample updates shown in preview mode only */
   const SAMPLE_UPDATES=[
+    {title:"Inspection went well",
+     body:"Inspector flagged the water heater as aging but working. I already have two quotes coming so we can decide with real numbers. Nothing for you to do today.",
+     created_at:new Date().toISOString(), client_id:"demo"},
     {title:"Welcome to your portal",
      body:"This is where I'll post quick updates, tips, and good news as we go. Tap any step in your roadmap to see what to expect. Check back anytime.",
-     created_at:new Date().toISOString()}
+     created_at:new Date(Date.now()-3*86400000).toISOString()}
   ];
 
   const $ = id => document.getElementById(id);
@@ -811,6 +830,7 @@
       renderTrack(c, copy);
     }
     $("greet").style.display = c.phase==="closed" ? "none" : "block";
+    refreshUpdatesUI(c);
     renderDates(c.key_dates);
     renderDocs(c.documents);
     renderActions(c.role||"buyer");
@@ -819,25 +839,67 @@
 
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
 
+  /* ---- messages and updates ----
+     One table serves both. A row with no client_id is a broadcast to everyone.
+     A row with a client_id is addressed to one transaction, and deal_side pins
+     it to the purchase or the sale for clients doing both at once.
+     The database already refuses to hand over other people's messages, this
+     filter only decides which of my own belong on the deal I am looking at. */
+  let allUpdates = [];
+
+  function updatesForDeal(c){
+    if(!c) return [];
+    return allUpdates.filter(u=>{
+      if(!u.client_id) return true;
+      if(u.client_id !== c.id) return false;
+      return !u.deal_side || u.deal_side === (c.role || "buyer");
+    });
+  }
+  function whenText(ts){
+    if(!ts) return "";
+    const d=new Date(ts);
+    if(isNaN(d.getTime())) return "";
+    const days=Math.floor((Date.now()-d.getTime())/86400000);
+    if(days<=0) return "Today";
+    if(days===1) return "Yesterday";
+    if(days<7) return days+" days ago";
+    return d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  }
+  function renderPinnedNote(c){
+    const el=$("pinnedNote");
+    const mine=updatesForDeal(c).filter(u=>u.client_id);
+    if(!mine.length){ el.style.display="none"; return; }
+    const u=mine[0];
+    el.innerHTML='<div class="from"><span class="av">C</span><span class="who">Note from Carson</span>'
+      +'<span class="when">'+esc(whenText(u.created_at))+'</span></div>'
+      +'<h4>'+esc(u.title)+'</h4><p>'+esc(u.body)+'</p>';
+    el.style.display="block";
+  }
   function renderUpdates(list){
     const sec=$("updatesSection"), wrap=$("updatesList");
     if(!list || !list.length){ sec.style.display="none"; return; }
     wrap.innerHTML="";
     list.forEach(u=>{
-      const card=document.createElement("div"); card.className="update-card";
+      const card=document.createElement("div");
+      card.className="update-card"+(u.client_id?" mine":"");
       const dt=u.created_at ? new Date(u.created_at).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "";
-      card.innerHTML='<h4>'+esc(u.title)+'</h4>'+(dt?'<div class="date">'+dt+'</div>':'')+'<p>'+esc(u.body)+'</p>';
+      card.innerHTML=(u.client_id?'<div class="foryou">For you</div>':'')
+        +'<h4>'+esc(u.title)+'</h4>'+(dt?'<div class="date">'+dt+'</div>':'')+'<p>'+esc(u.body)+'</p>';
       wrap.appendChild(card);
     });
     sec.style.display="block";
   }
+  function refreshUpdatesUI(c){
+    renderPinnedNote(c);
+    renderUpdates(updatesForDeal(c));
+  }
 
   async function loadUpdates(sb){
     try{
-      const { data, error } = await sb.from("updates").select("*").eq("published",true).order("created_at",{ascending:false}).limit(20);
-      if(error){ $("updatesSection").style.display="none"; return; }
-      renderUpdates(data);
-    }catch(e){ $("updatesSection").style.display="none"; }
+      const { data, error } = await sb.from("updates").select("*").eq("published",true).order("created_at",{ascending:false}).limit(50);
+      allUpdates = (error || !data) ? [] : data;
+    }catch(e){ allUpdates = []; }
+    refreshUpdatesUI(myDeals[activeIdx]);
   }
 
   function fmtDateParts(d){
@@ -955,7 +1017,8 @@
       $("demoBanner").style.display="block";
       $("settingsBtn").style.display="none";
       myDeals=[DEMO]; activeIdx=0;
-      renderPortal(DEMO); renderUpdates(SAMPLE_UPDATES); return;
+      allUpdates = SAMPLE_UPDATES;
+      renderPortal(DEMO); return;
     }
 
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
