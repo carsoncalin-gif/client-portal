@@ -196,7 +196,7 @@
           <h3>Person &amp; deal</h3>
           <div class="field"><label>Client name</label><input id="f_name" placeholder="Maria, or James &amp; Carol"></div>
           <div class="field"><label>Sign-in email</label><input id="f_email" type="email" placeholder="client@email.com"><div class="hint">The email they log in with. Each client only sees their own portal.</div></div>
-          <div class="field"><label>Partner email (optional)</label><input id="f_email2" type="email" placeholder="spouse@email.com"><div class="hint">For couples — both people can log in and see this same portal.</div></div>
+          <div class="field"><label>Partner email (optional)</label><input id="f_email2" type="email" placeholder="spouse@email.com"><div class="hint">For couples. Both people can log in and see this same portal.</div></div>
           <div class="row2">
             <div class="field"><label>Side</label><select id="f_role"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="both">Buyer + Seller</option></select></div>
             <div class="field"><label>Status pill</label><input id="f_status" placeholder="Under contract"></div>
@@ -205,7 +205,7 @@
             <div class="field"><label>Stage (happening now)</label><select id="f_stage"></select></div>
             <div class="field"><label>Deal phase</label><select id="f_phase"><option value="active">Active</option><option value="closed">Closed</option></select></div>
           </div>
-          <div class="field" id="financingField"><label>Financing</label><select id="f_financing"><option value="financed">Financed (loan)</option><option value="cash">Cash</option></select><div class="hint">Cash buyers get a shorter roadmap — no appraisal or loan steps.</div></div>
+          <div class="field" id="financingField"><label>Financing</label><select id="f_financing"><option value="financed">Financed (loan)</option><option value="cash">Cash</option></select><div class="hint">Cash buyers get a shorter roadmap, no appraisal or loan steps.</div></div>
         </div>
 
         <div class="card optcard">
@@ -245,7 +245,7 @@
           </div>
           <div id="docList"></div>
           <button class="addrow" id="addDocLink">+ Add external link instead</button>
-          <div class="hint" style="margin-top:10px">Uploaded files are private — only this client can open them, via a secure expiring link. (Save the client once before uploading.)</div>
+          <div class="hint" style="margin-top:10px">Uploaded files are private, only this client can open them, via a secure expiring link. (Save the client once before uploading.)</div>
         </div>
 
         <div class="card" id="closingCard">
@@ -323,7 +323,7 @@
       $("pwBtn").textContent="Signing in...";
       const { error } = await sb.auth.signInWithPassword({ email, password:pw });
       $("pwBtn").textContent="Sign in";
-      if(error){ toast("Wrong email or password — or sign in with a code, then set a password."); return; }
+      if(error){ toast("Wrong email or password. Or sign in with a code, then set a password."); return; }
       location.reload();
     };
     $("useCode").onclick=(e)=>{ e.preventDefault(); $("pwStep").style.display="none"; $("emailStep").style.display="block"; };
@@ -398,7 +398,7 @@
     const arr=stagesFor(c.role, c.financing);
     const next=Math.min((c.current_index||0)+1, arr.length-1);
     const { data, error } = await sb.from("clients").update({ current_index:next }).eq("id",c.id).select();
-    if(error || !data || !data.length){ toast("Couldn't update — check your admin access."); return; }
+    if(error || !data || !data.length){ toast("Couldn't update. Check your admin access."); return; }
     toast((c.client_name||"Client")+" → "+arr[next]);
     await loadClients();
   }
@@ -469,7 +469,7 @@
       : await sb.from("updates").insert(row).select();
     $("updSave").textContent = editingUpdId ? "Save" : "Post";
     if(res.error){ toast("Save failed: "+res.error.message); return; }
-    toast(editingUpdId ? "Saved" : "Posted — clients will see it");
+    toast(editingUpdId ? "Saved" : "Posted, clients will see it");
     closeUpdEditor(); loadUpdates();
   }
   function wireUpdates(){
@@ -482,7 +482,7 @@
   /* ---------- editor ---------- */
   function fillStageOptions(role, idx, financing){
     const arr=stagesFor(role, financing);
-    $("f_stage").innerHTML=arr.map((s,i)=>'<option value="'+i+'">'+i+' — '+esc(s)+'</option>').join("");
+    $("f_stage").innerHTML=arr.map((s,i)=>'<option value="'+i+'">'+i+'. '+esc(s)+'</option>').join("");
     $("f_stage").value=Math.max(0,Math.min(idx||0,arr.length-1));
   }
   function applyCloseLabels(role, financing){
@@ -528,7 +528,7 @@
       done++;
       $("upStatus").textContent="Uploaded "+done+" of "+imgs.length+"…";
     }
-    $("upStatus").textContent = done ? done+" photo"+(done>1?"s":"")+" added — tap Save to keep them." : "";
+    $("upStatus").textContent = done ? done+" photo"+(done>1?"s":"")+" added, tap Save to keep them." : "";
   }
 
   let docDraft=[];
@@ -559,7 +559,7 @@
       docDraft.push({ label:file.name, path:path }); renderDocList();
       done++; $("docStatus").textContent="Uploaded "+done+" of "+list.length+"…";
     }
-    $("docStatus").textContent = done ? done+" file"+(done>1?"s":"")+" added — tap Save." : "";
+    $("docStatus").textContent = done ? done+" file"+(done>1?"s":"")+" added, tap Save." : "";
   }
 
   let subDeals=[]; let activeSub=0;
@@ -671,8 +671,9 @@
   function inviteMsg(){
     const name=$("f_name").value.trim()||"there";
     const email=$("f_email").value.trim();
-    const noun=$("f_role").value==="seller"?"home sale":"home purchase";
-    return "Hi "+name+"! I set up a private portal so you can follow your "+noun+" every step of the way — where things stand, what's next, photos, and key dates.\n\nOpen this link: "+PORTAL_URL+"\nEnter your email"+(email?" ("+email+")":"")+" and you'll get a secure 6-digit code to sign in — no password to remember.\n\nTip: once you're in, tap your phone browser's Share button and \"Add to Home Screen\" so it lives like an app.\n\n— Carson";
+    const role=$("f_role").value;
+    const noun = role==="seller" ? "home sale" : role==="both" ? "move" : "home purchase";
+    return "Hi "+name+"! I set up a private portal so you can follow your "+noun+" every step of the way. Where things stand, what is next, photos, and key dates, all in one place.\n\nOpen this link: "+PORTAL_URL+"\nEnter your email"+(email?" ("+email+")":"")+" and you'll get a secure 6-digit code to sign in. No password to remember.\n\nOnce you are in, tap your phone's Share button and \"Add to Home Screen\" so it lives like an app.\n\nCarson";
   }
   async function save(){
     const data=collect();
@@ -686,8 +687,8 @@
     else { res=await sb.from("clients").insert(data).select(); }
     $("saveBtn").textContent="Save";
     if(res.error){ toast("Save failed: "+res.error.message); return; }
-    if(!res.data || !res.data.length){ toast("Nothing saved — run admin_policies.sql so your account can edit."); return; }
-    toast(isNew && invited ? "Saved — invite copied, paste it into a text" : "Saved");
+    if(!res.data || !res.data.length){ toast("Nothing saved. Check your admin access in Supabase."); return; }
+    toast(isNew && invited ? "Saved, invite copied, paste it into a text" : "Saved");
     await loadClients(); backToList();
   }
   async function del(){
@@ -751,7 +752,7 @@
       if(!pw) return;
       if(pw.length<6){ toast("Use at least 6 characters."); return; }
       const { error } = await sb.auth.updateUser({ password:pw });
-      toast(error ? "Couldn't set password." : "Password set — use it next time.");
+      toast(error ? "Couldn't set password." : "Password set, use it next time.");
     };
   }
 

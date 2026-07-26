@@ -211,7 +211,7 @@
 </head>
 <body>
 
-  <div class="demo-banner" id="demoBanner">Preview mode. Add your Supabase keys in the CONFIG block to switch on real logins and live data.</div>
+  <div class="demo-banner" id="demoBanner" style="display:none">Preview mode. Add your Supabase keys in the CONFIG block to switch on real logins and live data.</div>
   <div class="demo-banner" id="previewBanner" style="display:none"></div>
 
   <!-- LOGIN -->
@@ -703,8 +703,7 @@
 
   /* ---------------- boot ---------------- */
   async function boot(){
-    if(!configured){ renderPortal(DEMO); renderUpdates(SAMPLE_UPDATES); return; }
-    $("demoBanner").style.display="none";
+    if(!configured){ $("demoBanner").style.display="block"; renderPortal(DEMO); renderUpdates(SAMPLE_UPDATES); return; }
 
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     show("loadingView");
@@ -752,7 +751,7 @@
         renderPortal(myDeals[0]);
         loadUpdates(sb);
         const pb=$("previewBanner");
-        pb.innerHTML='Previewing as <b>'+esc(pc.client_name||"client")+'</b> — this is exactly what they see. <a href="admin.html" style="color:inherit;font-weight:700">Back to admin</a>';
+        pb.innerHTML='Previewing as <b>'+esc(pc.client_name||"client")+'</b>. This is exactly what they see. <a href="admin.html" style="color:inherit;font-weight:700">Back to admin</a>';
         pb.style.display="block";
         return; /* no visit logged, no footer */
       }
