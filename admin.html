@@ -208,6 +208,12 @@
           <div class="field" id="financingField"><label>Financing</label><select id="f_financing"><option value="financed">Financed (loan)</option><option value="cash">Cash</option></select><div class="hint">Cash buyers get a shorter roadmap, no appraisal or loan steps.</div></div>
         </div>
 
+        <div class="card">
+          <h3>What they chose</h3>
+          <div id="prefsView" style="font-size:13.5px;line-height:1.5"></div>
+          <div class="hint" style="margin-top:10px">Each person sets this themselves from their own portal. You cannot change it for them, you can only see it.</div>
+        </div>
+
         <div class="card optcard">
           <h3>Property</h3>
           <div class="field"><label>Address</label><input id="f_addr" placeholder="7419 Sylvan Ridge Road"></div>
@@ -343,10 +349,42 @@
   let clients=[];
   let lastSeen={};
   function ago(ts){ if(!ts) return ""; const s=(Date.now()-new Date(ts).getTime())/1000; if(s<60) return "just now"; if(s<3600) return Math.floor(s/60)+"m ago"; if(s<86400) return Math.floor(s/3600)+"h ago"; const d=Math.floor(s/86400); if(d<7) return d+"d ago"; return new Date(ts).toLocaleDateString(); }
+  /* what each person chose on their own portal, keyed by lowercased email */
+  let prefsByEmail={};
+  async function loadPrefs(){
+    prefsByEmail={};
+    try{
+      const { data } = await sb.from("preferences").select("*");
+      (data||[]).forEach(p=>{ if(p.email) prefsByEmail[p.email.trim().toLowerCase()]=p; });
+    }catch(e){}
+  }
+  function prefLine(email){
+    const e=(email||"").trim().toLowerCase();
+    if(!e) return "";
+    const p=prefsByEmail[e];
+    let detail;
+    if(!p){
+      detail='<span style="color:var(--ink-soft)">Has not opened their settings yet, so they see everything.</span>';
+    } else {
+      const bits=[];
+      bits.push(p.detail_level==="headlines" ? "Headlines only" : "Full detail");
+      bits.push(p.show_numbers ? "figures visible" : "figures tucked away");
+      if(p.display_name) bits.push('goes by "'+esc(p.display_name)+'"');
+      const when=p.updated_at ? " · set "+ago(p.updated_at) : "";
+      detail='<span style="color:var(--ink-soft)">'+bits.join(", ")+esc(when)+'</span>';
+    }
+    return '<div style="margin-bottom:9px"><b style="font-weight:600">'+esc(email)+'</b><br>'+detail+'</div>';
+  }
+  function renderPrefsView(){
+    const html=prefLine($("f_email").value)+prefLine($("f_email2").value);
+    $("prefsView").innerHTML = html || '<span style="color:var(--ink-soft)">Add a sign-in email first.</span>';
+  }
+
   async function loadClients(){
     const { data, error } = await sb.from("clients").select("*").order("created_at",{ascending:false});
     if(error){ $("clientList").innerHTML='<div class="empty">Could not load clients. Make sure the admin database rule has been added.</div>'; return; }
     clients=data||[];
+    await loadPrefs();
     lastSeen={};
     try{
       const { data:vs } = await sb.from("visits").select("client_id,seen_at").order("seen_at",{ascending:false}).limit(500);
@@ -653,6 +691,7 @@
     }
     activeSub=0; applyMode();
     dealToForm(subDeals[0]);
+    renderPrefsView();
     document.querySelectorAll(".optcard").forEach(el=>el.classList.toggle("collapsed", !c));
     $("deleteBtn").style.display = c ? "inline-flex" : "none";
     $("listView").style.display="none"; $("editView").style.display="block";
@@ -660,7 +699,8 @@
   }
   function collect(){
     subDeals[activeSub]=formToDeal(subDeals[activeSub].role);
-    const person={ client_name:$("f_name").value.trim(), email:$("f_email").value.trim(), email2:$("f_email2").value.trim()||null };
+    /* store emails lowercased so sign-in matching stays predictable */
+    const person={ client_name:$("f_name").value.trim(), email:$("f_email").value.trim().toLowerCase(), email2:$("f_email2").value.trim().toLowerCase()||null };
     if($("f_role").value==="both"){
       const buy=subDeals.find(d=>d.role==="buyer")||blankDeal("buyer");
       const sell=subDeals.find(d=>d.role==="seller")||blankDeal("seller");
@@ -721,6 +761,8 @@
     ["dragleave","dragend"].forEach(ev=>dz2.addEventListener(ev,(e)=>{ e.preventDefault(); dz2.classList.remove("drag"); }));
     dz2.addEventListener("drop",(e)=>{ e.preventDefault(); dz2.classList.remove("drag"); uploadDocs(e.dataTransfer.files); });
     $("f_role").onchange=onSideChange;
+    $("f_email").oninput=renderPrefsView;
+    $("f_email2").oninput=renderPrefsView;
     $("f_phase").onchange=()=>{ $("closingCard").style.display = $("f_phase").value==="closed" ? "block" : "none"; };
     $("f_financing").onchange=()=>{
       const fin=$("f_financing").value, role=subDeals[activeSub]?subDeals[activeSub].role:"buyer";

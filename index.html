@@ -166,6 +166,55 @@
   .action-btn .ic{flex:none;width:30px;height:30px;border-radius:8px;background:var(--teal-wash);display:grid;place-items:center;color:var(--teal-deep)}
   @media(max-width:560px){ .actions{grid-template-columns:1fr} }
 
+  /* settings entry point + panel */
+  .topline .right{display:flex;align-items:center;gap:9px}
+  .gear-btn{flex:none;width:38px;height:38px;border-radius:11px;border:1px solid var(--line);
+    background:var(--card);display:grid;place-items:center;color:var(--ink-soft);cursor:pointer;transition:.15s}
+  .gear-btn:hover{border-color:var(--teal);color:var(--teal-deep)}
+  .msg-btn .short{display:none}
+  #settingsPanel{display:none;background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:20px;margin:8px 0 2px;box-shadow:var(--shadow)}
+  #settingsPanel h2{font-family:'Fraunces',serif;font-weight:600;font-size:19px;margin-bottom:5px}
+  #settingsPanel .lede{font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:6px}
+  .set-row{padding:16px 0 0;margin-top:16px;border-top:1px solid var(--line)}
+  .set-row .q{display:block;font-size:14.5px;font-weight:600;margin-bottom:3px}
+  .set-row .why{font-size:12.5px;color:var(--ink-soft);line-height:1.45;margin-bottom:11px}
+  .seg{display:flex;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:4px}
+  .seg button{flex:1;border:0;background:transparent;font-family:inherit;font-weight:600;font-size:13.5px;
+    color:var(--ink-soft);padding:10px;border-radius:9px;cursor:pointer;transition:.18s}
+  .seg button.on{background:var(--ink);color:#fff}
+  .switch{display:inline-flex;align-items:center;gap:12px;cursor:pointer;user-select:none}
+  .switch .track{flex:none;width:50px;height:29px;border-radius:999px;background:var(--line);position:relative;transition:.2s}
+  .switch .track i{position:absolute;top:3px;left:3px;width:23px;height:23px;border-radius:50%;
+    background:#fff;box-shadow:0 2px 6px rgba(20,40,42,.28);transition:.2s}
+  .switch.on .track{background:var(--green)}
+  .switch.on .track i{left:24px}
+  .switch .state{font-size:13.5px;font-weight:600;color:var(--ink-soft)}
+  #prefName{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 14px;
+    font-family:inherit;font-size:15px;outline:none;background:var(--card);color:var(--ink)}
+  #prefName:focus{border-color:var(--teal)}
+  .set-foot{display:flex;align-items:center;gap:13px;margin-top:20px}
+  .set-foot button{border:0;background:var(--ink);color:#fff;font-family:inherit;font-weight:700;
+    font-size:14px;padding:12px 22px;border-radius:11px;cursor:pointer;transition:.18s}
+  .set-foot button:hover{background:var(--teal-deep)}
+  .set-foot .saved{font-size:13px;color:var(--green);font-weight:600;opacity:0;transition:.25s}
+  .set-foot .saved.show{opacity:1}
+
+  /* figures tucked away */
+  .numlock{display:none;align-items:center;gap:12px;background:var(--card);border:1px dashed var(--line);
+    border-radius:14px;padding:13px 16px;margin:0 0 18px}
+  .numlock p{font-size:13px;color:var(--ink-soft);line-height:1.4}
+  .numlock button{margin-left:auto;flex:none;border:1px solid var(--line);background:var(--paper);
+    font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);padding:9px 15px;border-radius:999px;
+    cursor:pointer;transition:.15s}
+  .numlock button:hover{border-color:var(--teal);color:var(--teal-deep)}
+
+  /* headlines mode */
+  .seeall{display:block;width:100%;border:1px solid var(--line);background:var(--card);font-family:inherit;
+    font-weight:600;font-size:13.5px;color:var(--ink-soft);padding:13px;border-radius:12px;cursor:pointer;
+    box-shadow:var(--shadow);transition:.15s}
+  .seeall:hover{border-color:var(--teal);color:var(--teal-deep)}
+
   /* portal footer / sign out */
   .portal-foot{text-align:center;color:var(--ink-soft);font-size:12.5px;margin:34px 0 10px}
   .portal-foot a{color:var(--teal-deep);font-weight:600;cursor:pointer}
@@ -200,6 +249,8 @@
     font-weight:700;font-size:13px;padding:10px 16px;border-radius:999px}
 
   @media(max-width:560px){
+    .msg-btn .full{display:none}
+    .msg-btn .short{display:inline}
     .greet h1{font-size:30px}
     .gallery .hero{height:230px}
     .thumbs{grid-template-columns:repeat(4,1fr)}
@@ -244,10 +295,47 @@
         <div class="mark">C</div>
         <div><b>Carson Calin Real Estate</b><span>Carson Calin, REALTOR&reg;</span></div>
       </div>
-      <a class="msg-btn" href="sms:+13179035973">Message Carson</a>
+      <div class="right">
+        <button type="button" class="gear-btn" id="settingsBtn" title="Your portal settings" aria-label="Your portal settings">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        </button>
+        <a class="msg-btn" href="sms:+13179035973"><span class="full">Message Carson</span><span class="short">Message</span></a>
+      </div>
     </div>
 
     <div class="dealswitch" id="dealSwitch" style="display:none"></div>
+
+    <!-- PER PERSON SETTINGS -->
+    <div id="settingsPanel">
+      <h2>Your portal, your way</h2>
+      <p class="lede">These choices are yours alone. Anyone else who signs in with their own email sets their own.</p>
+
+      <div class="set-row">
+        <span class="q">How much do you want to see?</span>
+        <p class="why">Headlines keeps this page short, just where things stand and what is coming up. Everything shows the full roadmap.</p>
+        <div class="seg" id="segDetail">
+          <button type="button" data-v="headlines">Headlines</button>
+          <button type="button" data-v="everything">Everything</button>
+        </div>
+      </div>
+
+      <div class="set-row">
+        <span class="q">Show the numbers</span>
+        <p class="why">Turn this off and prices and figures stay tucked away until you tap to show them. Useful if other people pick up your phone.</p>
+        <div class="switch" id="swNumbers"><div class="track"><i></i></div><span class="state"></span></div>
+      </div>
+
+      <div class="set-row">
+        <span class="q">What should I call you?</span>
+        <p class="why">Your portal will greet you by name rather than the household.</p>
+        <input id="prefName" placeholder="First name" autocomplete="given-name" maxlength="40">
+      </div>
+
+      <div class="set-foot">
+        <button type="button" id="settingsDone">Done</button>
+        <span class="saved" id="prefSaved">Saved</span>
+      </div>
+    </div>
 
     <div class="tabs" id="tabs">
       <button type="button" class="tab active" data-page="pageHome">Your Home</button>
@@ -276,6 +364,11 @@
           <b id="propPrice"></b>
           <span id="propPriceLbl"></span>
         </div>
+      </div>
+
+      <div class="numlock" id="numLock">
+        <p>Figures are tucked away on your portal.</p>
+        <button type="button" id="revealNums">Show them</button>
       </div>
 
       <a id="listingBtn" class="listing-btn" href="#" target="_blank" rel="noopener" style="display:none">
@@ -339,7 +432,7 @@
       <div class="actions" id="actions"></div>
     </div>
 
-    <div class="portal-foot" id="portalFoot" style="display:none">Signed in as <span id="meEmail"></span> &middot; <a href="#" id="signOutLink">Sign out</a></div>
+    <div class="portal-foot" id="portalFoot" style="display:none">Signed in as <span id="meEmail"></span> &middot; <a href="#" id="footSettings">Portal settings</a> &middot; <a href="#" id="signOutLink">Sign out</a></div>
   </div>
 
 <!-- Supabase client (used only when you add your keys below) -->
@@ -463,6 +556,79 @@
   const $ = id => document.getElementById(id);
   function show(id){ ["loginView","loadingView","portalView"].forEach(v=>$(v).style.display = v===id ? (id==="portalView"?"block":"flex") : "none"); }
 
+  /* ---- per person preferences ----
+     These belong to the signed-in person, not to the deal, so two people sharing
+     one portal each get their own. Defaults match how the portal behaved before
+     preferences existed, so an untouched client sees no change. */
+  const PREF_DEFAULTS = { detail_level:"everything", show_numbers:true, display_name:null };
+  let myPrefs = Object.assign({}, PREF_DEFAULTS);
+  let myEmail = "";
+  let prefsEditable = false;   /* off in preview mode and in demo mode */
+  let revealNumbers = false;   /* this visit only, never saved */
+  let seeAllSteps = false;     /* this visit only, never saved */
+  const DOTS = "•••";
+
+  function numbersVisible(){ return !!myPrefs.show_numbers || revealNumbers; }
+  function headlinesMode(){ return myPrefs.detail_level === "headlines"; }
+  function nameFor(c){ return (myPrefs.display_name||"").trim() || (c ? c.client_name : ""); }
+
+  async function loadPrefs(email){
+    try{
+      const { data, error } = await sb.from("preferences").select("*").eq("email", email.toLowerCase()).maybeSingle();
+      if(!error && data) myPrefs = Object.assign({}, PREF_DEFAULTS, data);
+    }catch(e){}
+  }
+  let prefSaveTimer = null;
+  function savePrefs(){
+    if(!prefsEditable || !sb || !myEmail) return;
+    clearTimeout(prefSaveTimer);
+    prefSaveTimer = setTimeout(async ()=>{
+      const row = {
+        email: myEmail.toLowerCase(),
+        detail_level: myPrefs.detail_level,
+        show_numbers: !!myPrefs.show_numbers,
+        display_name: (myPrefs.display_name||"").trim() || null,
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await sb.from("preferences").upsert(row, { onConflict:"email" });
+      const s = $("prefSaved");
+      s.textContent = error ? "Could not save that, please try again" : "Saved";
+      s.style.color = error ? "#c0492f" : "var(--green)";
+      s.classList.add("show");
+      setTimeout(()=>s.classList.remove("show"), error ? 3200 : 1600);
+    }, 500);
+  }
+  function syncSettingsUI(){
+    document.querySelectorAll("#segDetail button").forEach(b=>b.classList.toggle("on", b.dataset.v===myPrefs.detail_level));
+    const sw = $("swNumbers");
+    sw.classList.toggle("on", !!myPrefs.show_numbers);
+    sw.querySelector(".state").textContent = myPrefs.show_numbers ? "Showing" : "Tucked away";
+    $("prefName").value = myPrefs.display_name || "";
+  }
+  function wireSettings(){
+    const openPanel = ()=>{ $("settingsPanel").style.display="block"; syncSettingsUI(); window.scrollTo({top:0,behavior:"smooth"}); };
+    const closePanel = ()=>{ $("settingsPanel").style.display="none"; };
+    $("settingsBtn").onclick = ()=>{ $("settingsPanel").style.display==="block" ? closePanel() : openPanel(); };
+    $("footSettings").onclick = (e)=>{ e.preventDefault(); openPanel(); };
+    $("settingsDone").onclick = closePanel;
+    document.querySelectorAll("#segDetail button").forEach(b=>{
+      b.onclick = ()=>{ myPrefs.detail_level=b.dataset.v; seeAllSteps=false; syncSettingsUI(); savePrefs(); rerender(); };
+    });
+    $("swNumbers").onclick = ()=>{
+      myPrefs.show_numbers = !myPrefs.show_numbers; revealNumbers=false; syncSettingsUI(); savePrefs(); rerender();
+    };
+    $("prefName").oninput = ()=>{ myPrefs.display_name=$("prefName").value; savePrefs(); rerenderGreeting(); };
+    $("revealNums").onclick = ()=>{ revealNumbers=true; rerender(); };
+  }
+  function rerender(){ if(myDeals[activeIdx]) renderPortal(myDeals[activeIdx]); }
+  function rerenderGreeting(){
+    const c = myDeals[activeIdx];
+    if(!c) return;
+    const hr=new Date().getHours();
+    const hello = hr<12 ? "Good morning" : hr<17 ? "Good afternoon" : "Good evening";
+    $("greetHead").textContent = hello+", "+nameFor(c)+".";
+  }
+
   function renderGallery(photos, demo){
     const hero=$("heroPhoto"), thumbs=$("thumbs"), gal=$("gallery");
     thumbs.innerHTML="";
@@ -488,13 +654,17 @@
     const track=$("track"); track.innerHTML="";
     const total=copy.steps.length;
     const idx=Math.max(0,Math.min(c.current_index,total-1));
-    const pct=Math.round((idx/(total-1))*100);
+    const pct=total>1 ? Math.round((idx/(total-1))*100) : 100;
     const ph=document.createElement("div"); ph.className="progress-head";
     ph.innerHTML='<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div>'
       +'<span class="pct">Step '+(idx+1)+' of '+total+'</span>';
     track.appendChild(ph);
 
+    /* headlines mode shows only the step happening now, with the rest one tap away */
+    const brief = headlinesMode() && !seeAllSteps;
+
     copy.steps.forEach((s,i)=>{
+      if(brief && i!==idx) return;
       const cls = i<c.current_index ? "done" : (i===c.current_index ? "current" : "");
       const dot = i<c.current_index ? "&#10003;" : (i+1);
       const badge = cls==="current" ? '<span class="badge">Happening now</span>' : "";
@@ -513,20 +683,29 @@
       }
       track.appendChild(step);
     });
+
+    if(brief){
+      const btn=document.createElement("button");
+      btn.type="button"; btn.className="seeall";
+      btn.textContent="See all "+total+" steps";
+      btn.onclick=()=>{ seeAllSteps=true; renderTrack(c, copy); };
+      track.appendChild(btn);
+    }
   }
 
   function renderClosed(c, copy){
+    const showNums=numbersVisible();
     $("celebHead").textContent=copy.celebHead;
     $("celebSub").textContent=copy.celebSub;
     $("equityHeader").textContent=copy.equityHeader;
-    const vals=[c.close_1,c.close_2,c.close_3,c.close_net];
+    const vals=[c.close_1,c.close_2,c.close_3,c.close_net].map(v=>showNums ? (v||"") : DOTS);
     const grid=$("statGrid"); grid.innerHTML="";
     copy.statLabels.forEach((l,i)=>{
       const el=document.createElement("div"); el.className="stat"+(i===3?" accent":"");
-      el.innerHTML='<span>'+l+'</span><b>'+(vals[i]||"")+'</b>'; grid.appendChild(el);
+      el.innerHTML='<span>'+l+'</span><b>'+esc(vals[i])+'</b>'; grid.appendChild(el);
     });
     $("barLeftLbl").textContent=copy.barLeftLbl;
-    $("barValue").textContent=c.bar_value||"";
+    $("barValue").textContent=showNums ? (c.bar_value||"") : DOTS;
     $("barLoan").style.width=(c.loan_pct!=null?c.loan_pct:70)+"%";
     $("barOwn").style.width=(c.own_pct!=null?c.own_pct:30)+"%";
     $("keyLoan").textContent=copy.keyLoan;
@@ -537,16 +716,19 @@
 
   function renderPortal(c){
     const copy = copyFor(c);
+    const showNums = numbersVisible();
     const hr=new Date().getHours();
     const hello = hr<12 ? "Good morning" : hr<17 ? "Good afternoon" : "Good evening";
-    $("greetHead").textContent = hello+", "+c.client_name+".";
+    $("greetHead").textContent = hello+", "+nameFor(c)+".";
     $("greetSub").textContent = copy.sub;
     $("dealStatus").textContent = c.status_label || copy.defaultStatus;
     const searching = c.role!=="seller" && !c.property_address;
     $("propAddr").textContent = c.property_address || (searching ? "Still searching for your home" : "");
     $("propMeta").textContent = c.property_meta || (searching ? "We'll drop the home in here the moment you're under contract." : "");
-    $("propPrice").textContent = c.property_price || (searching ? "TBD" : "");
+    const priceText = c.property_price || (searching ? "TBD" : "");
+    $("propPrice").textContent = (showNums || !priceText) ? priceText : DOTS;
     $("propPriceLbl").textContent = c.price_label || (searching ? "Target" : "");
+    $("numLock").style.display = showNums ? "none" : "flex";
     renderGallery(c.photos, !configured);
 
     const lbtn = $("listingBtn");
@@ -686,16 +868,17 @@
   }
 
   let myDeals=[];
-  function renderSwitcher(activeIdx){
+  let activeIdx=0;
+  function renderSwitcher(idx){
     const sw=$("dealSwitch");
     if(!myDeals || myDeals.length<2){ sw.style.display="none"; return; }
     sw.innerHTML="";
     myDeals.forEach((d,i)=>{
-      const b=document.createElement("button"); if(i===activeIdx) b.className="active";
+      const b=document.createElement("button"); if(i===idx) b.className="active";
       const verb = d.role==="seller" ? "Selling" : "Buying";
       const addr = d.property_address || (d.role==="seller" ? "Your sale" : "Still searching");
       b.textContent = verb+" · "+addr;
-      b.onclick=()=>{ renderSwitcher(i); renderPortal(d); window.scrollTo({top:0,behavior:"smooth"}); };
+      b.onclick=()=>{ activeIdx=i; seeAllSteps=false; renderSwitcher(i); renderPortal(d); window.scrollTo({top:0,behavior:"smooth"}); };
       sw.appendChild(b);
     });
     sw.style.display="flex";
@@ -703,7 +886,12 @@
 
   /* ---------------- boot ---------------- */
   async function boot(){
-    if(!configured){ $("demoBanner").style.display="block"; renderPortal(DEMO); renderUpdates(SAMPLE_UPDATES); return; }
+    if(!configured){
+      $("demoBanner").style.display="block";
+      $("settingsBtn").style.display="none";
+      myDeals=[DEMO]; activeIdx=0;
+      renderPortal(DEMO); renderUpdates(SAMPLE_UPDATES); return;
+    }
 
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     show("loadingView");
@@ -747,6 +935,11 @@
       if(pc){
         myDeals=[pc];
         if(pc.cross_deal){ myDeals.push(Object.assign({ id:pc.id, client_name:pc.client_name }, pc.cross_deal)); }
+        /* preview shows the portal at its defaults, not with your own preferences applied */
+        myPrefs = Object.assign({}, PREF_DEFAULTS);
+        prefsEditable = false;
+        $("settingsBtn").style.display = "none";
+        activeIdx = 0;
         renderSwitcher(0);
         renderPortal(myDeals[0]);
         loadUpdates(sb);
@@ -758,7 +951,12 @@
     }
 
     const { data, error } = await sb.from("clients").select("*").or("email.ilike."+email+",email2.ilike."+email).order("created_at",{ascending:true});
-    const rows = data || [];
+    /* ilike treats _ and % as wildcards, so an email like sam_t@x.com could match a
+       different client's row. Re-check every row for an exact match before showing it. */
+    const want = email.trim().toLowerCase();
+    const rows = (data||[]).filter(r =>
+      (r.email||"").trim().toLowerCase() === want || (r.email2||"").trim().toLowerCase() === want
+    );
     if(error || !rows.length){
       $("loadingView").innerHTML = "We couldn't find a portal tied to <b>"+esc(email)+"</b> yet.<br><br>Double-check you signed in with the email Carson invited, or text him at <a href='sms:+13179035973' style='color:var(--teal-deep);font-weight:600'>(317) 903-5973</a>.<br><br><a href='#' id='retryEmail' style='color:var(--teal-deep);font-weight:600'>Try a different email</a>";
       $("loadingView").style.textAlign="center";
@@ -770,6 +968,11 @@
     }
     myDeals = [];
     rows.forEach(r=>{ myDeals.push(r); if(r.cross_deal){ myDeals.push(Object.assign({ id:r.id, client_name:r.client_name }, r.cross_deal)); } });
+    myEmail = email;
+    await loadPrefs(email);
+    prefsEditable = true;
+    syncSettingsUI();
+    activeIdx = 0;
     renderSwitcher(0);
     renderPortal(myDeals[0]);
     loadUpdates(sb);
@@ -808,6 +1011,7 @@
   })();
 
   setupTabs();
+  wireSettings();
   boot();
 </script>
 </body>
