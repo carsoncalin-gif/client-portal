@@ -200,6 +200,53 @@
   .set-foot .saved{font-size:13px;color:var(--green);font-weight:600;opacity:0;transition:.25s}
   .set-foot .saved.show{opacity:1}
 
+  /* add to home screen sheet */
+  #sheetBack{position:fixed;inset:0;background:rgba(18,30,32,.55);backdrop-filter:blur(3px);
+    opacity:0;pointer-events:none;transition:opacity .28s ease;z-index:60}
+  #sheetBack.show{opacity:1;pointer-events:auto}
+  #installSheet{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--card);
+    border-radius:24px 24px 0 0;padding:22px 22px 26px;box-shadow:0 -22px 60px -20px rgba(20,40,42,.5);
+    transform:translateY(106%);transition:transform .42s cubic-bezier(.22,1,.36,1);
+    max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #installSheet.show{transform:translateY(0)}
+  .sheet-grip{width:42px;height:4px;border-radius:999px;background:var(--line);margin:0 auto 16px}
+  #installSheet h2{font-family:'Fraunces',serif;font-weight:600;font-size:22px;line-height:1.15;margin-bottom:7px}
+  #installSheet .sub{font-size:14px;color:var(--ink-soft);line-height:1.5;margin-bottom:20px}
+  .istep{display:flex;gap:13px;margin-bottom:17px}
+  .istep .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--teal-wash);
+    color:var(--teal-deep);display:grid;place-items:center;font-size:13px;font-weight:700;margin-top:1px}
+  .istep .t{font-size:14.5px;line-height:1.45;flex:1}
+  .istep .t b{font-weight:700}
+  .mock{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--paper);
+    padding:10px 12px;display:flex;align-items:center;gap:11px}
+  .mock .ic{flex:none;width:32px;height:32px;border-radius:9px;background:var(--card);
+    border:1px solid var(--line);display:grid;place-items:center;color:var(--teal-deep)}
+  .mock .lbl{font-size:13.5px;font-weight:600;color:var(--ink)}
+  .mock.hl{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-wash)}
+  .sheet-note{font-size:12.5px;color:var(--ink-soft);line-height:1.45;background:var(--paper);
+    border-radius:11px;padding:11px 13px;margin-top:2px}
+  .sheet-foot{display:flex;gap:10px;margin-top:22px}
+  .sheet-foot button{flex:1;border:0;font-family:inherit;font-weight:700;font-size:14.5px;
+    padding:14px;border-radius:12px;cursor:pointer;transition:.18s}
+  .sheet-foot .primary{background:var(--ink);color:#fff}
+  .sheet-foot .primary:hover{background:var(--teal-deep)}
+  .sheet-foot .ghost{background:var(--card);color:var(--ink-soft);border:1px solid var(--line)}
+  .sheet-foot .ghost:hover{background:var(--paper)}
+  @media(min-width:640px){
+    #installSheet{left:50%;right:auto;bottom:auto;top:50%;width:460px;border-radius:22px;
+      padding:26px 26px 28px;box-shadow:var(--shadow);
+      transform:translate(-50%,-46%) scale(.97);opacity:0;
+      transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .28s ease}
+    #installSheet.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+    .sheet-grip{display:none}
+  }
+  @media(prefers-reduced-motion:reduce){
+    #installSheet{transition:none}
+  }
+  .set-row .showme{border:1px solid var(--line);background:var(--paper);font-family:inherit;
+    font-weight:600;font-size:13.5px;color:var(--ink);padding:11px 18px;border-radius:11px;cursor:pointer;transition:.15s}
+  .set-row .showme:hover{border-color:var(--teal);color:var(--teal-deep)}
+
   /* figures tucked away */
   .numlock{display:none;align-items:center;gap:12px;background:var(--card);border:1px dashed var(--line);
     border-radius:14px;padding:13px 16px;margin:0 0 18px}
@@ -281,7 +328,6 @@
         <div class="sent" id="resendRow" style="display:block;color:var(--ink-soft)">Didn't get it? <a href="#" id="resendLink" style="color:var(--teal-deep)">Send again</a></div>
       </div>
       <div class="sent" id="loginSent">We emailed you a 6-digit code. Enter it above to open your portal.</div>
-      <div id="a2hsTip" style="display:none;color:var(--ink-soft);font-size:13px;line-height:1.5;margin-top:18px"></div>
     </div>
   </div>
 
@@ -329,6 +375,12 @@
         <span class="q">What should I call you?</span>
         <p class="why">Your portal will greet you by name rather than the household.</p>
         <input id="prefName" placeholder="First name" autocomplete="given-name" maxlength="40">
+      </div>
+
+      <div class="set-row">
+        <span class="q">Keep this on your home screen</span>
+        <p class="why" id="installWhy">Open your portal with one tap, like an app, instead of hunting for the link.</p>
+        <button type="button" class="showme" id="showInstall">Show me how</button>
       </div>
 
       <div class="set-foot">
@@ -433,6 +485,16 @@
     </div>
 
     <div class="portal-foot" id="portalFoot" style="display:none">Signed in as <span id="meEmail"></span> &middot; <a href="#" id="footSettings">Portal settings</a> &middot; <a href="#" id="signOutLink">Sign out</a></div>
+  </div>
+
+  <!-- ADD TO HOME SCREEN WALKTHROUGH -->
+  <div id="sheetBack"></div>
+  <div id="installSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-grip"></div>
+    <h2 id="sheetTitle"></h2>
+    <p class="sub" id="sheetSub"></p>
+    <div id="sheetBody"></div>
+    <div class="sheet-foot" id="sheetFoot"></div>
   </div>
 
 <!-- Supabase client (used only when you add your keys below) -->
@@ -980,6 +1042,8 @@
     $("portalFoot").style.display = "block";
     $("signOutLink").onclick = async (e)=>{ e.preventDefault(); await sb.auth.signOut(); location.reload(); };
     try{ rows.forEach(r=>sb.from("visits").insert({ client_id:r.id, email:email })); }catch(e){}
+    /* once, after they are actually looking at their portal */
+    setTimeout(maybeShowInstallTip, 1500);
   }
 
   /* register the app service worker so clients can add it to their home screen */
@@ -987,31 +1051,150 @@
     navigator.serviceWorker.register("service-worker.js").catch(()=>{});
   }
 
-  /* ---- add to home screen helpers ---- */
+  /* ================= ADD TO HOME SCREEN =================
+     iOS has no install API, so those clients need a real walkthrough.
+     Android and desktop Chrome fire beforeinstallprompt, so they get a
+     genuine one tap install button. Shown once automatically after the
+     first sign in, then always reachable from the settings panel.
+
+     The "already seen" flag lives in localStorage, not in the database,
+     because installing is per device. A person who dismisses this on a
+     laptop still needs to see it on their phone. Keyed by email so two
+     people sharing one device each get shown once. */
   const isStandalone = window.navigator.standalone === true ||
                        window.matchMedia("(display-mode: standalone)").matches;
-  // Android / desktop Chrome: real install button
   let deferredPrompt = null;
-  window.addEventListener("beforeinstallprompt", (e)=>{
-    e.preventDefault(); deferredPrompt = e;
-    const tip = $("a2hsTip");
-    tip.innerHTML = '<button id="installBtn" style="margin-top:4px">Add to home screen</button>';
-    tip.style.display = "block";
-    $("installBtn").onclick = async ()=>{ tip.style.display="none"; deferredPrompt.prompt(); deferredPrompt=null; };
-  });
-  // iOS Safari: no auto prompt exists, so show a one-line tip
-  (function(){
-    const ua = window.navigator.userAgent.toLowerCase();
-    const isIOS = /iphone|ipad|ipod/.test(ua);
-    if(isIOS && !isStandalone){
-      const tip = $("a2hsTip");
-      tip.textContent = "Tip: tap the Share icon, then “Add to Home Screen” to keep this one tap away.";
-      tip.style.display = "block";
+
+  const INSTALL_KEY_PREFIX = "cc_install_tip_v1:";
+  function installKey(){ return INSTALL_KEY_PREFIX + (myEmail || "guest").toLowerCase(); }
+  function installTipSeen(){ try{ return localStorage.getItem(installKey())==="1"; }catch(e){ return false; } }
+  function markInstallTipSeen(){ try{ localStorage.setItem(installKey(), "1"); }catch(e){} }
+
+  const ICON_SHARE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M8.5 6.5 12 3l3.5 3.5"/><path d="M7 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1"/></svg>';
+  const ICON_ADDHOME = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg>';
+  const ICON_DOTS = '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>';
+
+  function deviceKind(){
+    const ua = navigator.userAgent;
+    const iOS = /iphone|ipad|ipod/i.test(ua) ||
+                (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if(iOS) return /crios|fxios|edgios|opios/i.test(ua) ? "ios-other" : "ios-safari";
+    if(/android/i.test(ua)) return "android";
+    return "desktop";
+  }
+  function stepEl(n, text, mock){
+    return '<div class="istep"><span class="n">'+n+'</span><div class="t">'+text+(mock||"")+'</div></div>';
+  }
+  function mockEl(icon, label, hl){
+    return '<div class="mock'+(hl?" hl":"")+'"><span class="ic">'+icon+'</span><span class="lbl">'+esc(label)+'</span></div>';
+  }
+  function renderInstallSheet(){
+    const kind = deviceKind();
+    let title="", sub="", body="", foot="";
+    const gotIt = '<button type="button" class="primary" data-act="close">Got it</button>';
+
+    if(deferredPrompt){
+      const desk = kind==="desktop";
+      title = desk ? "Keep your portal one click away" : "Keep your portal one tap away";
+      sub = desk
+        ? "Install it and Carson's Concierge opens in its own window, no tab to find."
+        : "Add it to your home screen and it opens like an app, with no link to hunt for.";
+      body = stepEl(1, desk ? "Click <b>Install</b> below, then confirm."
+                            : "Tap <b>Add to home screen</b> below, then confirm.");
+      foot = '<button type="button" class="ghost" data-act="close">Not now</button>'
+           + '<button type="button" class="primary" data-act="install">'+(desk?"Install":"Add to home screen")+'</button>';
+    } else if(kind==="ios-safari"){
+      title = "Keep your portal one tap away";
+      sub = "Add it to your home screen and it opens like an app, with no link to hunt for and no password to remember.";
+      body = stepEl(1, "Tap the <b>Share</b> icon. It sits in the bar at the bottom of your screen.",
+                    mockEl(ICON_SHARE, "Share", true))
+           + stepEl(2, "Scroll down the list and tap <b>Add to Home Screen</b>.",
+                    mockEl(ICON_ADDHOME, "Add to Home Screen", true))
+           + stepEl(3, "Tap <b>Add</b> in the top right corner. That is it.");
+      foot = gotIt;
+    } else if(kind==="ios-other"){
+      title = "Keep your portal one tap away";
+      sub = "Add it to your home screen and it opens like an app.";
+      body = stepEl(1, "Open your browser menu and choose <b>Share</b>.", mockEl(ICON_SHARE, "Share", true))
+           + stepEl(2, "Tap <b>Add to Home Screen</b>, then <b>Add</b>.", mockEl(ICON_ADDHOME, "Add to Home Screen", true))
+           + '<div class="sheet-note">If you do not see that option, open portal.carsoncalin.com in Safari and try these steps again.</div>';
+      foot = gotIt;
+    } else if(kind==="android"){
+      title = "Keep your portal one tap away";
+      sub = "Add it to your home screen and it opens like an app, with no link to hunt for.";
+      body = stepEl(1, "Open your browser menu, the three dots in the corner.", mockEl(ICON_DOTS, "Menu", true))
+           + stepEl(2, "Tap <b>Install app</b>, or <b>Add to Home screen</b> if you do not see that.",
+                    mockEl(ICON_ADDHOME, "Install app", true));
+      foot = gotIt;
+    } else {
+      title = "Keep your portal handy";
+      sub = "Bookmark portal.carsoncalin.com, or open it on your phone to add it to your home screen where it works like an app.";
+      body = "";
+      foot = gotIt;
     }
-  })();
+
+    $("sheetTitle").innerHTML = title;
+    $("sheetSub").innerHTML = sub;
+    $("sheetBody").innerHTML = body;
+    $("sheetFoot").innerHTML = foot;
+    $("sheetFoot").querySelectorAll("button").forEach(b=>{
+      b.onclick = async ()=>{
+        if(b.dataset.act === "install" && deferredPrompt){
+          const p = deferredPrompt;
+          deferredPrompt = null;
+          closeInstallSheet();
+          try{ p.prompt(); }catch(e){}
+          return;
+        }
+        closeInstallSheet();
+      };
+    });
+  }
+  function openInstallSheet(){
+    if(isStandalone){ return; }
+    renderInstallSheet();
+    $("sheetBack").classList.add("show");
+    $("installSheet").classList.add("show");
+  }
+  function closeInstallSheet(){
+    $("sheetBack").classList.remove("show");
+    $("installSheet").classList.remove("show");
+  }
+  function syncInstallRow(){
+    const row = $("showInstall");
+    if(isStandalone){
+      row.style.display = "none";
+      $("installWhy").textContent = "You are all set, this portal is already saved to your home screen.";
+    } else {
+      row.style.display = "inline-block";
+    }
+  }
+  /* Show once, automatically, shortly after the portal first paints.
+     The small delay gives beforeinstallprompt a chance to fire so Android
+     and desktop get the real button rather than the manual instructions. */
+  function maybeShowInstallTip(){
+    if(isStandalone) return;
+    if(installTipSeen()) return;
+    if(deviceKind()==="desktop" && !deferredPrompt) return;
+    markInstallTipSeen();
+    openInstallSheet();
+  }
+  window.addEventListener("beforeinstallprompt", (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    /* if the sheet is already open showing manual steps, upgrade it to the real button */
+    if($("installSheet").classList.contains("show")) renderInstallSheet();
+  });
+  function wireInstall(){
+    $("showInstall").onclick = ()=>{ markInstallTipSeen(); openInstallSheet(); };
+    $("sheetBack").onclick = closeInstallSheet;
+    document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeInstallSheet(); });
+    syncInstallRow();
+  }
 
   setupTabs();
   wireSettings();
+  wireInstall();
   boot();
 </script>
 </body>
