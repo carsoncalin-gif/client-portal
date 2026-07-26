@@ -272,6 +272,12 @@
           <div class="hint">The two percentages should add to 100.</div>
         </div>
 
+        <div class="card" id="invitePick" style="display:none">
+          <h3>Who is this invite for?</h3>
+          <div id="invitePickRows"></div>
+          <div class="hint" style="margin-top:10px">Each person signs in with their own email, so they each get their own invite.</div>
+        </div>
+
         <div class="save-bar">
           <button class="btn ghost" id="copyInvite">Invite</button>
           <button class="btn ghost" id="copyLink">Link</button>
@@ -694,6 +700,7 @@
     activeSub=0; applyMode();
     dealToForm(subDeals[0]);
     renderPrefsView();
+    $("invitePick").style.display="none";
     document.querySelectorAll(".optcard").forEach(el=>el.classList.toggle("collapsed", !c));
     $("deleteBtn").style.display = c ? "inline-flex" : "none";
     $("listView").style.display="none"; $("editView").style.display="block";
@@ -710,19 +717,40 @@
     }
     return Object.assign({}, person, dealColumns(subDeals[0]), { cross_deal: null });
   }
-  function inviteMsg(){
+  /* the invite has to name the recipient's own email, not always the first one,
+     otherwise the second person is told to sign in with their partner's address */
+  function inviteMsg(toEmail){
     const name=$("f_name").value.trim()||"there";
-    const email=$("f_email").value.trim();
+    const email=(toEmail||"").trim();
     const role=$("f_role").value;
     const noun = role==="seller" ? "home sale" : role==="both" ? "move" : "home purchase";
     return "Hi "+name+"! I set up Carson's Concierge for you, a private portal where you can follow your "+noun+" every step of the way. Where things stand, what is next, photos, key dates, and your documents, all in one place.\n\n"+PORTAL_LABEL+"\n\nEnter your email"+(email?" ("+email+")":"")+" and you'll get a secure 6-digit code to sign in. No password to remember.\n\nWhen you open it, it will show you how to save it to your home screen so it sits there like an app.\n\nCarson";
   }
+  async function copyInviteFor(email){
+    try{
+      await navigator.clipboard.writeText(inviteMsg(email));
+      toast(email ? "Invite for "+email+" copied" : "Invite copied");
+    }catch(e){ toast("Copy failed"); }
+    $("invitePick").style.display="none";
+  }
+  function openInvitePick(e1, e2){
+    const wrap=$("invitePickRows"); wrap.innerHTML="";
+    [e1, e2].filter(Boolean).forEach(em=>{
+      const b=document.createElement("button");
+      b.className="btn ghost"; b.style.marginBottom="8px"; b.textContent=em;
+      b.onclick=()=>copyInviteFor(em);
+      wrap.appendChild(b);
+    });
+    $("invitePick").style.display="block";
+    $("invitePick").scrollIntoView({behavior:"smooth", block:"center"});
+  }
+
   async function save(){
     const data=collect();
     if(!data.client_name || !data.email){ toast("Name and email are required."); return; }
     const isNew=!editingId;
     let invited=false;
-    if(isNew){ try{ await navigator.clipboard.writeText(inviteMsg()); invited=true; }catch(e){} }
+    if(isNew){ try{ await navigator.clipboard.writeText(inviteMsg(data.email)); invited=true; }catch(e){} }
     $("saveBtn").textContent="Saving...";
     let res;
     if(editingId){ res=await sb.from("clients").update(data).eq("id",editingId).select(); }
@@ -730,7 +758,9 @@
     $("saveBtn").textContent="Save";
     if(res.error){ toast("Save failed: "+res.error.message); return; }
     if(!res.data || !res.data.length){ toast("Nothing saved. Check your admin access in Supabase."); return; }
-    toast(isNew && invited ? "Saved, invite copied, paste it into a text" : "Saved");
+    toast(isNew && invited
+      ? ("Saved, invite for "+data.email+" copied"+(data.email2 ? ". Tap Invite for the second person" : ""))
+      : "Saved");
     await loadClients(); backToList();
   }
   async function del(){
@@ -779,9 +809,10 @@
       try{ await navigator.clipboard.writeText(PORTAL_URL); toast("Portal link copied"); }
       catch(e){ toast(PORTAL_URL); }
     };
-    $("copyInvite").onclick=async ()=>{
-      try{ await navigator.clipboard.writeText(inviteMsg()); toast("Invite message copied"); }
-      catch(e){ toast("Copy failed"); }
+    $("copyInvite").onclick=()=>{
+      const e1=$("f_email").value.trim(), e2=$("f_email2").value.trim();
+      if(!e2){ copyInviteFor(e1); return; }
+      openInvitePick(e1, e2);
     };
     document.querySelectorAll(".optcard h3").forEach(h=>h.onclick=()=>h.parentElement.classList.toggle("collapsed"));
     document.querySelectorAll("#phaseChips .chip").forEach(b=>b.onclick=()=>{
