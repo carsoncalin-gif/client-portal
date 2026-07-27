@@ -13,6 +13,11 @@
  *   RESEND_API_KEY   a send-capable key from resend.com
  *   NOTIFY_FROM      e.g. "Carson Calin <carson@carsoncalin.com>", at a
  *                    domain verified in Resend
+ *
+ * Optional:
+ *   NOTIFY_REPLY_TO  where replies should land. Defaults to Carson's real
+ *                    working inbox, because carsoncalin.com has no MX records
+ *                    and a reply to a send-only address would bounce.
  */
 
 const SUPABASE_URL = "https://vnqicwaslxynefzyvvjo.supabase.co";
@@ -160,6 +165,7 @@ exports.handler = async (event) => {
             body: JSON.stringify({
               from,
               to,
+              reply_to: process.env.NOTIFY_REPLY_TO || ADMIN_EMAIL,
               subject,
               html,
               text: `Carson posted an update${client.property_address ? " on " + client.property_address : ""}: ${title}\n\nOpen your portal: ${portalUrl}`,
