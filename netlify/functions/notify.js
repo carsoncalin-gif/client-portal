@@ -131,26 +131,38 @@ exports.handler = async (event) => {
       ? `Update on ${client.property_address}`
       : "An update from Carson";
 
+    // Keep whatever Resend says when it refuses. Only Carson can reach this
+    // endpoint, so surfacing the real reason is safe and saves guessing.
     const results = await Promise.all(
-      toSend.map((to) =>
-        fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from,
-            to,
-            subject,
-            html,
-            text: `Carson posted an update${client.property_address ? " on " + client.property_address : ""}: ${title}\n\nOpen your portal: ${portalUrl}`,
-          }),
-        })
-          .then((r) => r.ok)
-          .catch(() => false)
-      )
+      toSend.map(async (to) => {
+        try {
+          const r = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from,
+              to,
+              subject,
+              html,
+              text: `Carson posted an update${client.property_address ? " on " + client.property_address : ""}: ${title}\n\nOpen your portal: ${portalUrl}`,
+            }),
+          });
+          if (r.ok) return { ok: true };
+          let detail = "HTTP " + r.status;
+          try {
+            const j = await r.json();
+            detail = j.message || j.error || detail;
+          } catch (e) {}
+          return { ok: false, detail };
+        } catch (e) {
+          return { ok: false, detail: String((e && e.message) || e) };
+        }
+      })
     );
 
-    const sent = results.filter(Boolean).length;
-    return json(200, { sent, attempted: toSend.length, skipped: optedOut.size });
+    const sent = results.filter((r) => r.ok).length;
+    const errors = [...new Set(results.filter((r) => !r.ok).map((r) => r.detail))];
+    return json(200, { sent, attempted: toSend.length, skipped: optedOut.size, errors, from });
   } catch (e) {
     return json(500, { error: "Something went wrong sending the email" });
   }
