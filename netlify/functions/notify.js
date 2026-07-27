@@ -59,14 +59,13 @@ function emailHtml({ title, address, portalUrl }) {
 exports.handler = async (event) => {
   if (event.httpMethod !== "POST") return json(405, { error: "Use POST" });
 
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.NOTIFY_FROM;
-  if (!apiKey || !from) {
-    return json(503, { error: "Email is not configured yet", sent: 0 });
-  }
-
+  // Auth first, deliberately. Nobody unauthenticated should learn anything
+  // about this site's configuration, not even whether email is switched on.
   const auth = event.headers.authorization || event.headers.Authorization || "";
   if (!auth.startsWith("Bearer ")) return json(401, { error: "Not signed in" });
+
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.NOTIFY_FROM;
 
   let payload;
   try {
@@ -86,6 +85,11 @@ exports.handler = async (event) => {
     const me = await meRes.json();
     if ((me.email || "").toLowerCase() !== ADMIN_EMAIL) {
       return json(403, { error: "Not allowed" });
+    }
+
+    // Confirmed it is Carson, so it is safe to report configuration state.
+    if (!apiKey || !from) {
+      return json(503, { error: "Email is not configured yet", sent: 0 });
     }
 
     // 2. Read the transaction as Carson. Row level security still applies.
