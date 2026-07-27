@@ -394,6 +394,12 @@
       </div>
 
       <div class="set-row">
+        <span class="q">Email me when Carson posts</span>
+        <p class="why">A short note with a link, only when Carson posts something about your own transaction. Never for general news.</p>
+        <div class="switch" id="swNotify"><div class="track"><i></i></div><span class="state"></span></div>
+      </div>
+
+      <div class="set-row">
         <span class="q">Keep this on your home screen</span>
         <p class="why" id="installWhy">Open your portal with one tap, like an app, instead of hunting for the link.</p>
         <button type="button" class="showme" id="showInstall">Show me how</button>
@@ -644,7 +650,7 @@
      These belong to the signed-in person, not to the deal, so two people sharing
      one portal each get their own. Defaults match how the portal behaved before
      preferences existed, so an untouched client sees no change. */
-  const PREF_DEFAULTS = { detail_level:"everything", show_numbers:true, display_name:null };
+  const PREF_DEFAULTS = { detail_level:"everything", show_numbers:true, display_name:null, notify_email:true };
   let myPrefs = Object.assign({}, PREF_DEFAULTS);
   let myEmail = "";
   let prefsEditable = false;   /* off in preview mode and in demo mode */
@@ -671,10 +677,19 @@
         email: myEmail.toLowerCase(),
         detail_level: myPrefs.detail_level,
         show_numbers: !!myPrefs.show_numbers,
+        notify_email: !!myPrefs.notify_email,
         display_name: (myPrefs.display_name||"").trim() || null,
         updated_at: new Date().toISOString()
       };
-      const { error } = await sb.from("preferences").upsert(row, { onConflict:"email" });
+      let res = await sb.from("preferences").upsert(row, { onConflict:"email" });
+      /* If the notify_email column has not been added yet, save everything else
+         rather than losing the whole change. Keeps settings working regardless. */
+      if(res.error && /notify_email/i.test(res.error.message||"")){
+        const fallback = Object.assign({}, row);
+        delete fallback.notify_email;
+        res = await sb.from("preferences").upsert(fallback, { onConflict:"email" });
+      }
+      const error = res.error;
       const s = $("prefSaved");
       s.textContent = error ? "Could not save that, please try again" : "Saved";
       s.style.color = error ? "#c0492f" : "var(--green)";
@@ -687,6 +702,9 @@
     const sw = $("swNumbers");
     sw.classList.toggle("on", !!myPrefs.show_numbers);
     sw.querySelector(".state").textContent = myPrefs.show_numbers ? "Showing" : "Tucked away";
+    const nt = $("swNotify");
+    nt.classList.toggle("on", !!myPrefs.notify_email);
+    nt.querySelector(".state").textContent = myPrefs.notify_email ? "Email me" : "Do not email me";
     $("prefName").value = myPrefs.display_name || "";
   }
   function wireSettings(){
@@ -700,6 +718,9 @@
     });
     $("swNumbers").onclick = ()=>{
       myPrefs.show_numbers = !myPrefs.show_numbers; revealNumbers=false; syncSettingsUI(); savePrefs(); rerender();
+    };
+    $("swNotify").onclick = ()=>{
+      myPrefs.notify_email = !myPrefs.notify_email; syncSettingsUI(); savePrefs();
     };
     $("prefName").oninput = ()=>{ myPrefs.display_name=$("prefName").value; savePrefs(); rerenderGreeting(); };
     $("revealNums").onclick = ()=>{ revealNumbers=true; rerender(); };
