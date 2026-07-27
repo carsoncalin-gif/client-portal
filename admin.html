@@ -587,7 +587,7 @@
       if(!res.ok){ toast("Posted, but the email did not send."); return; }
       if(out.sent){ toast("Emailed "+out.sent+" "+(out.sent===1?"person":"people")); }
       else if(out.errors && out.errors.length){ toast("Email rejected: "+out.errors[0], 9000); }
-      else { toast("Posted. "+(out.reason||"Nobody to email.")); }
+      else { toast("Posted. "+(out.reason||"Nobody to email."), 9000); }
     }catch(e){ toast("Posted, but the email did not send."); }
   }
 

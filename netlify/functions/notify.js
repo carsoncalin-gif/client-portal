@@ -105,7 +105,16 @@ exports.handler = async (event) => {
     const recipients = [client.email, client.email2]
       .map((e) => (e || "").trim().toLowerCase())
       .filter(Boolean);
-    if (!recipients.length) return json(200, { sent: 0, reason: "No email addresses on this client" });
+    if (!recipients.length) {
+      return json(200, {
+        sent: 0,
+        reason:
+          "This client has no email address saved. email=" +
+          JSON.stringify(client.email) +
+          ", email2=" +
+          JSON.stringify(client.email2),
+      });
+    }
 
     // 3. Drop anyone who has switched these emails off. No preferences row
     //    means they have never changed anything, so they stay opted in.
@@ -115,14 +124,23 @@ exports.handler = async (event) => {
       { headers: sbHeaders }
     );
     const optedOut = new Set();
+    let prefLookupFailed = false;
     if (pRes.ok) {
       const prefs = await pRes.json();
       prefs.forEach((p) => {
         if (p.notify_email === false) optedOut.add((p.email || "").trim().toLowerCase());
       });
+    } else {
+      prefLookupFailed = true;
     }
     const toSend = recipients.filter((e) => !optedOut.has(e));
-    if (!toSend.length) return json(200, { sent: 0, reason: "Everyone on this deal has these emails turned off" });
+    if (!toSend.length) {
+      return json(200, {
+        sent: 0,
+        found: recipients,
+        reason: "Everyone on this deal turned these emails off: " + [...optedOut].join(", "),
+      });
+    }
 
     // 4. Send. Title and a button only, the message itself stays in the portal.
     const portalUrl = process.env.URL || "https://portal.carsoncalin.com";
@@ -162,7 +180,15 @@ exports.handler = async (event) => {
 
     const sent = results.filter((r) => r.ok).length;
     const errors = [...new Set(results.filter((r) => !r.ok).map((r) => r.detail))];
-    return json(200, { sent, attempted: toSend.length, skipped: optedOut.size, errors, from });
+    return json(200, {
+      sent,
+      attempted: toSend.length,
+      found: recipients,
+      skipped: [...optedOut],
+      prefLookupFailed,
+      errors,
+      from,
+    });
   } catch (e) {
     return json(500, { error: "Something went wrong sending the email" });
   }
