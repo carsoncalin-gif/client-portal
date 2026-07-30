@@ -23,6 +23,7 @@
 const SUPABASE_URL = "https://vnqicwaslxynefzyvvjo.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_niTtBPiLg9trvKnZXwXGhA_uQ_Ry9lZ";
 const ADMIN_EMAIL = "carsoncalin@livindyrealty.com";
+const PORTAL_URL = "https://portal.carsoncalin.com";
 
 const json = (statusCode, body) => ({
   statusCode,
@@ -36,29 +37,68 @@ function esc(s) {
   );
 }
 
+/* Email HTML is deliberately old fashioned: tables, inline styles, no images,
+   no web fonts. Gmail strips much of what a browser accepts, and a broken
+   image placeholder in the first email a client ever gets looks careless.
+   Fraunces cannot be relied on in mail, so headings use Georgia, the closest
+   system serif to the portal's voice that renders everywhere. */
+const SERIF = "Georgia,'Times New Roman',Times,serif";
+const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+
 function emailHtml({ title, address, portalUrl }) {
   const where = address ? " on " + esc(address) : "";
+  const preheader = "Carson posted an update" + where + ". Open your portal to read it.";
   return `<!doctype html>
-<html><body style="margin:0;padding:0;background:#f5f1ea;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f1ea;padding:32px 16px;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e6ded2;border-radius:18px;padding:30px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-        <tr><td>
-          <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#4a5a5d;">Carson's Concierge</div>
-          <div style="font-size:21px;font-weight:600;color:#1b2426;line-height:1.3;margin:14px 0 6px;">${esc(title)}</div>
-          <div style="font-size:14.5px;color:#4a5a5d;line-height:1.5;">Carson posted an update${where}. Open your portal to read it.</div>
-          <div style="margin:24px 0 6px;">
-            <a href="${esc(portalUrl)}" style="display:inline-block;background:#1b2426;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:14px 26px;border-radius:11px;">Open your portal</a>
-          </div>
-          <div style="font-size:12px;color:#4a5a5d;line-height:1.5;margin-top:22px;border-top:1px solid #e6ded2;padding-top:16px;">
-            You are getting this because Carson is handling your transaction. You can turn these off anytime under Portal settings.
-          </div>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light only">
+<title>${esc(title)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f1ea;-webkit-text-size-adjust:100%;">
+  <div style="display:none;font-size:1px;color:#f5f1ea;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${esc(preheader)}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f5f1ea;">
+    <tr><td align="center" style="padding:28px 14px 34px;">
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px;">
+
+        <tr><td style="padding:0 4px 14px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td width="30" height="30" align="center" valign="middle" bgcolor="#0e9fb0" style="border-radius:9px;font-family:${SERIF};font-size:15px;font-weight:bold;color:#04282c;">C</td>
+            <td style="padding-left:10px;font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1.4px;text-transform:uppercase;color:#4a5a5d;">Carson's Concierge</td>
+          </tr></table>
         </td></tr>
+
+        <tr><td bgcolor="#ffffff" style="background-color:#ffffff;border:1px solid #e6ded2;border-radius:18px;padding:28px 26px 30px;">
+
+          <p style="margin:0 0 12px;font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1.2px;text-transform:uppercase;color:#0a7a87;">New update</p>
+
+          <h1 style="margin:0 0 10px;font-family:${SERIF};font-size:23px;font-weight:normal;line-height:1.3;color:#1b2426;">${esc(title)}</h1>
+
+          <p style="margin:0 0 24px;font-family:${SANS};font-size:15px;line-height:1.55;color:#4a5a5d;">Carson posted an update${where}.</p>
+
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td align="center" bgcolor="#1b2426" style="border-radius:11px;">
+              <a href="${esc(portalUrl)}" target="_blank" style="display:inline-block;padding:15px 30px;font-family:${SANS};font-size:16px;font-weight:bold;line-height:1;color:#ffffff;text-decoration:none;border-radius:11px;">View in your portal</a>
+            </td>
+          </tr></table>
+
+          <p style="margin:26px 0 0;padding-top:18px;border-top:1px solid #e6ded2;font-family:${SANS};font-size:12px;line-height:1.55;color:#4a5a5d;">You are receiving this because Carson is handling your transaction. You can turn these emails off anytime under Portal settings.</p>
+
+        </td></tr>
+
+        <tr><td align="center" style="padding:18px 4px 0;font-family:${SANS};font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:#94a0a2;">
+          Carson Calin, REALTOR<span style="font-size:8px;vertical-align:super;">&reg;</span> &nbsp;&middot;&nbsp; Brokered by eXp Realty
+        </td></tr>
+
       </table>
-      <div style="font-size:10.5px;color:#8a9698;letter-spacing:.06em;text-transform:uppercase;margin-top:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">Brokered by eXp Realty</div>
+
     </td></tr>
   </table>
-</body></html>`;
+</body>
+</html>`;
 }
 
 exports.handler = async (event) => {
@@ -148,11 +188,11 @@ exports.handler = async (event) => {
     }
 
     // 4. Send. Title and a button only, the message itself stays in the portal.
-    const portalUrl = process.env.URL || "https://portal.carsoncalin.com";
+    const portalUrl = PORTAL_URL;
     const html = emailHtml({ title, address: client.property_address, portalUrl });
     const subject = client.property_address
-      ? `Update on ${client.property_address}`
-      : "An update from Carson";
+      ? `New update on ${client.property_address}`
+      : "New update from Carson Calin";
 
     // Keep whatever Resend says when it refuses. Only Carson can reach this
     // endpoint, so surfacing the real reason is safe and saves guessing.
@@ -168,7 +208,7 @@ exports.handler = async (event) => {
               reply_to: process.env.NOTIFY_REPLY_TO || ADMIN_EMAIL,
               subject,
               html,
-              text: `Carson posted an update${client.property_address ? " on " + client.property_address : ""}: ${title}\n\nOpen your portal: ${portalUrl}`,
+              text: `${title}\n\nCarson posted an update${client.property_address ? " on " + client.property_address : ""}. View it in your portal:\n${portalUrl}\n\nYou can turn these emails off anytime under Portal settings.\nCarson Calin, REALTOR. Brokered by eXp Realty.`,
             }),
           });
           if (r.ok) return { ok: true };
