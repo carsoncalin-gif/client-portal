@@ -184,7 +184,7 @@
             </div>
             <div class="field"><label>Title</label><input id="u_title" placeholder="Inspection went well"></div>
             <div class="field"><label>Message</label><textarea id="u_body" rows="4" placeholder="A short note in your own voice…"></textarea></div>
-            <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:14px;font-weight:500;color:var(--ink)"><input type="checkbox" id="u_pub" checked style="width:auto"> Visible to clients</label></div>
+            <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:14px;font-weight:500;color:var(--ink)"><input type="checkbox" id="u_pub" checked style="width:auto"> <span id="u_pubLabel">Visible to all clients</span></label><div class="hint">Unchecking hides it from everyone, including whoever it is addressed to. It does not delete it.</div></div>
             <div style="display:flex;gap:10px">
               <button class="btn ghost" id="updCancel" style="flex:1">Cancel</button>
               <button class="btn" id="updSave" style="flex:1">Post</button>
@@ -536,6 +536,10 @@
     const both=!!(c && c.cross_deal);
     $("u_sideField").style.display = both ? "block" : "none";
     if(!both) $("u_side").value="";
+    /* name the real audience, so "visible" can never be read as "everyone" */
+    $("u_pubLabel").textContent = c
+      ? "Visible to "+(c.client_name||"this client")
+      : "Visible to all clients";
   }
   function openUpdEditor(u){
     editingUpdId = u ? u.id : null;
