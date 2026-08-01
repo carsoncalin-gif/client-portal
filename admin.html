@@ -12,7 +12,7 @@
   :root{
     --ink:#1b2426; --ink-soft:#4a5a5d; --paper:#f5f1ea; --card:#ffffff;
     --teal:#0e9fb0; --teal-deep:#0a7a87; --teal-wash:#e2f2f4;
-    --gold:#c98a2b; --line:#e6ded2; --green:#2f9e6f; --red:#c0492f;
+    --line:#e6ded2; --green:#2f9e6f; --red:#c0492f;
     --shadow:0 18px 50px -22px rgba(20,40,42,.45);
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -498,7 +498,7 @@
     updates.forEach(u=>{
       const card=document.createElement("div"); card.className="client-card";
       const date=new Date(u.created_at).toLocaleDateString(undefined,{month:"short",day:"numeric"});
-      const badge=u.published ? '<span class="badge closed">Live</span>' : '<span class="badge" style="background:#f7ead8;color:var(--gold)">Hidden</span>';
+      const badge=u.published ? '<span class="badge closed">Live</span>' : '<span class="badge" style="background:var(--line);color:var(--ink-soft)">Hidden</span>';
       const preview=(u.body||"").length>60 ? u.body.slice(0,60)+"…" : (u.body||"");
       card.innerHTML='<div class="who" style="min-width:0"><b>'+esc(u.title)+'</b><span>'+esc(recipientLabel(u))+' · '+date+' · '+esc(preview)+'</span></div>'+badge
         +'<button class="adv" data-act="toggle" title="'+(u.published?"Hide from clients":"Make visible")+'">'+(u.published?"&#9679;":"&#9675;")+'</button>'

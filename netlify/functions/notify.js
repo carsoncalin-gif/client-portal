@@ -111,7 +111,7 @@ function emailHtml({ title, body, address, portalUrl }) {
 
           ${bodyHtml(body)}
 
-          <p style="margin:22px 0 20px;padding-top:18px;border-top:1px solid #e6ded2;font-family:${SANS};font-size:13.5px;line-height:1.55;color:#4a5a5d;">You can always see your full timeline, documents and dates in your portal. Or just reach me directly, whichever is easier.</p>
+          <p style="margin:22px 0 20px;padding-top:18px;border-top:1px solid #e6ded2;font-family:${SANS};font-size:13.5px;line-height:1.55;color:#4a5a5d;">Your full timeline, documents and dates are always waiting in your portal, saved on your home screen or at portal.carsoncalin.com. Or just reach me directly, whichever is easier.</p>
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
             ${button({ href: portalUrl, label: "View in your portal", bg: "#1b2426", color: "#ffffff" })}
@@ -119,7 +119,16 @@ function emailHtml({ title, body, address, portalUrl }) {
             ${button({ href: "tel:" + PHONE, label: "Call Carson", bg: "#ffffff", color: "#1b2426", border: "#1b2426" })}
           </table>
 
-          <p style="margin:8px 0 0;font-family:${SANS};font-size:12px;line-height:1.55;color:#4a5a5d;">You are receiving this because Carson is handling your transaction. You can turn these emails off anytime under Portal settings.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td bgcolor="#f5f1ea" style="background-color:#f5f1ea;border-radius:12px;padding:16px 18px;">
+              <p style="margin:0 0 8px;font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1.2px;text-transform:uppercase;color:#0a7a87;">Keep it one tap away</p>
+              <p style="margin:0 0 10px;font-family:${SANS};font-size:13px;line-height:1.6;color:#4a5a5d;">Your portal can live on your home screen like an app, so you never have to hunt for a link.</p>
+              <p style="margin:0 0 6px;font-family:${SANS};font-size:13px;line-height:1.6;color:#1b2426;"><b>On an iPhone</b>, open portal.carsoncalin.com in Safari, tap the Share icon in the bar at the bottom of your screen, then tap Add to Home Screen.</p>
+              <p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.6;color:#1b2426;"><b>On an Android phone</b>, open your browser menu, the three dots in the corner, then tap Install app.</p>
+            </td>
+          </tr></table>
+
+          <p style="margin:20px 0 0;font-family:${SANS};font-size:12px;line-height:1.55;color:#4a5a5d;">You are receiving this because Carson is handling your transaction. You can turn these emails off anytime under Portal settings.</p>
 
         </td></tr>
 
@@ -242,7 +251,7 @@ exports.handler = async (event) => {
               reply_to: process.env.NOTIFY_REPLY_TO || ADMIN_EMAIL,
               subject,
               html,
-              text: `${title}\n\n${String(body || "").trim()}\n\nYou can always see your full timeline, documents and dates in your portal:\n${portalUrl}\n\nOr reach me directly. Text or call ${PHONE_PRETTY}.\n\nYou can turn these emails off anytime under Portal settings.\nCarson Calin, REALTOR. Brokered by eXp Realty.`,
+              text: `${title}\n\n${String(body || "").trim()}\n\nYour full timeline, documents and dates are always waiting in your portal:\n${portalUrl}\n\nOr reach me directly. Text or call ${PHONE_PRETTY}.\n\nKEEP IT ONE TAP AWAY\nYour portal can live on your home screen like an app. On an iPhone, open ${portalUrl} in Safari, tap the Share icon at the bottom of your screen, then tap Add to Home Screen. On an Android phone, open your browser menu and tap Install app.\n\nYou can turn these emails off anytime under Portal settings.\nCarson Calin, REALTOR. Brokered by eXp Realty.`,
             }),
           });
           if (r.ok) return { ok: true };
