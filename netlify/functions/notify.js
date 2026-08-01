@@ -44,10 +44,42 @@ function esc(s) {
    system serif to the portal's voice that renders everywhere. */
 const SERIF = "Georgia,'Times New Roman',Times,serif";
 const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
+const PHONE = "+13179035973";
+const PHONE_PRETTY = "(317) 903-5973";
 
-function emailHtml({ title, address, portalUrl }) {
+/* The message itself renders in the email, so a client who never taps
+   through has still received it. Blank lines become paragraphs, single
+   line breaks become breaks, everything escaped first. */
+function bodyHtml(body) {
+  const text = String(body == null ? "" : body).trim();
+  if (!text) return "";
+  return text
+    .split(/\n\s*\n/)
+    .map(
+      (p) =>
+        `<p style="margin:0 0 15px;font-family:${SANS};font-size:15.5px;line-height:1.62;color:#1b2426;">${esc(p).replace(/\n/g, "<br>")}</p>`
+    )
+    .join("");
+}
+
+/* Bulletproof stacked button. Height and padding are set so the tap target
+   clears 48px, and the radius sits on both the cell and the anchor so Gmail
+   and Apple Mail agree on the shape. */
+function button({ href, label, bg, color, border }) {
+  return `<tr><td align="center" bgcolor="${bg}" height="52" style="background-color:${bg};border-radius:12px;${border ? "border:2px solid " + border + ";" : ""}">
+    <a href="${esc(href)}" target="_blank" style="display:block;padding:16px 18px;font-family:${SANS};font-size:16px;font-weight:bold;line-height:20px;color:${color};text-decoration:none;border-radius:12px;">${esc(label)}</a>
+  </td></tr>
+  <tr><td height="12" style="height:12px;line-height:12px;font-size:0;">&nbsp;</td></tr>`;
+}
+
+function emailHtml({ title, body, address, portalUrl }) {
   const where = address ? " on " + esc(address) : "";
-  const preheader = "Carson posted an update" + where + ". Open your portal to read it.";
+  const plain = String(body == null ? "" : body).replace(/\s+/g, " ").trim();
+  const preheader = plain
+    ? plain.length > 140
+      ? plain.slice(0, 140).replace(/\s+\S*$/, "")
+      : plain
+    : "Carson posted an update" + where + ".";
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -75,17 +107,19 @@ function emailHtml({ title, address, portalUrl }) {
 
           <p style="margin:0 0 12px;font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1.2px;text-transform:uppercase;color:#0a7a87;">New update</p>
 
-          <h1 style="margin:0 0 10px;font-family:${SERIF};font-size:23px;font-weight:normal;line-height:1.3;color:#1b2426;">${esc(title)}</h1>
+          <h1 style="margin:0 0 14px;font-family:${SERIF};font-size:23px;font-weight:normal;line-height:1.3;color:#1b2426;">${esc(title)}</h1>
 
-          <p style="margin:0 0 24px;font-family:${SANS};font-size:15px;line-height:1.55;color:#4a5a5d;">Carson posted an update${where}.</p>
+          ${bodyHtml(body)}
 
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-            <td align="center" bgcolor="#1b2426" style="border-radius:11px;">
-              <a href="${esc(portalUrl)}" target="_blank" style="display:inline-block;padding:15px 30px;font-family:${SANS};font-size:16px;font-weight:bold;line-height:1;color:#ffffff;text-decoration:none;border-radius:11px;">View in your portal</a>
-            </td>
-          </tr></table>
+          <p style="margin:22px 0 20px;padding-top:18px;border-top:1px solid #e6ded2;font-family:${SANS};font-size:13.5px;line-height:1.55;color:#4a5a5d;">You can always see your full timeline, documents and dates in your portal. Or just reach me directly, whichever is easier.</p>
 
-          <p style="margin:26px 0 0;padding-top:18px;border-top:1px solid #e6ded2;font-family:${SANS};font-size:12px;line-height:1.55;color:#4a5a5d;">You are receiving this because Carson is handling your transaction. You can turn these emails off anytime under Portal settings.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            ${button({ href: portalUrl, label: "View in your portal", bg: "#1b2426", color: "#ffffff" })}
+            ${button({ href: "sms:" + PHONE, label: "Text Carson", bg: "#ffffff", color: "#1b2426", border: "#1b2426" })}
+            ${button({ href: "tel:" + PHONE, label: "Call Carson", bg: "#ffffff", color: "#1b2426", border: "#1b2426" })}
+          </table>
+
+          <p style="margin:8px 0 0;font-family:${SANS};font-size:12px;line-height:1.55;color:#4a5a5d;">You are receiving this because Carson is handling your transaction. You can turn these emails off anytime under Portal settings.</p>
 
         </td></tr>
 
@@ -118,7 +152,7 @@ exports.handler = async (event) => {
   } catch (e) {
     return json(400, { error: "Bad request body" });
   }
-  const { client_id, title } = payload;
+  const { client_id, title, body } = payload;
   if (!client_id || !title) return json(400, { error: "client_id and title are required" });
 
   const sbHeaders = { apikey: SUPABASE_ANON_KEY, Authorization: auth };
@@ -189,7 +223,7 @@ exports.handler = async (event) => {
 
     // 4. Send. Title and a button only, the message itself stays in the portal.
     const portalUrl = PORTAL_URL;
-    const html = emailHtml({ title, address: client.property_address, portalUrl });
+    const html = emailHtml({ title, body, address: client.property_address, portalUrl });
     const subject = client.property_address
       ? `New update on ${client.property_address}`
       : "New update from Carson Calin";
@@ -208,7 +242,7 @@ exports.handler = async (event) => {
               reply_to: process.env.NOTIFY_REPLY_TO || ADMIN_EMAIL,
               subject,
               html,
-              text: `${title}\n\nCarson posted an update${client.property_address ? " on " + client.property_address : ""}. View it in your portal:\n${portalUrl}\n\nYou can turn these emails off anytime under Portal settings.\nCarson Calin, REALTOR. Brokered by eXp Realty.`,
+              text: `${title}\n\n${String(body || "").trim()}\n\nYou can always see your full timeline, documents and dates in your portal:\n${portalUrl}\n\nOr reach me directly. Text or call ${PHONE_PRETTY}.\n\nYou can turn these emails off anytime under Portal settings.\nCarson Calin, REALTOR. Brokered by eXp Realty.`,
             }),
           });
           if (r.ok) return { ok: true };

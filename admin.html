@@ -571,16 +571,16 @@
     closeUpdEditor(); loadUpdates();
     /* email only for brand new posts to one transaction, never for edits and
        never for broadcasts. A failure here must never look like a failed post. */
-    if(isNewPost && cid && row.published) notifyClient(cid, title);
+    if(isNewPost && cid && row.published) notifyClient(cid, title, body);
   }
-  async function notifyClient(clientId, title){
+  async function notifyClient(clientId, title, body){
     try{
       const { data:{ session } } = await sb.auth.getSession();
       if(!session) return;
       const res = await fetch("/.netlify/functions/notify", {
         method:"POST",
         headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+session.access_token },
-        body: JSON.stringify({ client_id:clientId, title:title })
+        body: JSON.stringify({ client_id:clientId, title:title, body:body })
       });
       const out = await res.json().catch(()=>({}));
       if(res.status===503){ toast("Posted. Email is not switched on yet."); return; }
