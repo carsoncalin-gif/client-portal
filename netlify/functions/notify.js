@@ -66,8 +66,12 @@ function bodyHtml(body) {
    clears 48px, and the radius sits on both the cell and the anchor so Gmail
    and Apple Mail agree on the shape. */
 function button({ href, label, bg, color, border }) {
+  /* target=_blank is only meaningful for web links. On sms: and tel: it asks
+     the mail client to hand a non-web scheme to a browser, which is where iOS
+     Mail drops the Messages handoff. */
+  const target = /^https?:/i.test(href) ? ' target="_blank"' : "";
   return `<tr><td align="center" bgcolor="${bg}" height="52" style="background-color:${bg};border-radius:12px;${border ? "border:2px solid " + border + ";" : ""}">
-    <a href="${esc(href)}" target="_blank" style="display:block;padding:16px 18px;font-family:${SANS};font-size:16px;font-weight:bold;line-height:20px;color:${color};text-decoration:none;border-radius:12px;">${esc(label)}</a>
+    <a href="${esc(href)}"${target} style="display:block;padding:16px 18px;font-family:${SANS};font-size:16px;font-weight:bold;line-height:20px;color:${color};text-decoration:none;border-radius:12px;">${esc(label)}</a>
   </td></tr>
   <tr><td height="12" style="height:12px;line-height:12px;font-size:0;">&nbsp;</td></tr>`;
 }
@@ -117,6 +121,8 @@ function emailHtml({ title, body, address, portalUrl }) {
             ${button({ href: "sms:" + PHONE, label: "Text Carson", bg: "#1b2426", color: "#ffffff" })}
             ${button({ href: "tel:" + PHONE, label: "Call Carson", bg: "#ffffff", color: "#1b2426", border: "#1b2426" })}
           </table>
+
+          <p style="margin:2px 0 20px;font-family:${SANS};font-size:14px;line-height:1.55;color:#4a5a5d;text-align:center;">Or reach me anytime at ${PHONE_PRETTY}</p>
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
             <td bgcolor="#f5f1ea" style="background-color:#f5f1ea;border-radius:12px;padding:16px 18px;">
