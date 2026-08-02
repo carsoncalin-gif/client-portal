@@ -47,6 +47,9 @@
     font-weight:700;font-size:15px;padding:14px;border-radius:12px;cursor:pointer;transition:.2s}
   .login-card button:hover{background:var(--teal-deep)}
   .login-card .sent{color:var(--green);font-size:14px;margin-top:14px;display:none}
+  /* an inline message rather than a native alert popup, which looks like an
+     error a browser threw rather than something the portal is telling you */
+  #loginErr{display:none;color:#c0492f;font-size:13.5px;line-height:1.5;margin-top:14px;text-align:left}
   /* Installing before signing in means one sign in instead of two, because a
      new home screen app starts with empty storage. */
   #loginInstall{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
@@ -238,8 +241,11 @@
   #installSheet,#askSheet{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--card);
     border-radius:24px 24px 0 0;padding:22px 22px 26px;box-shadow:0 -22px 60px -20px rgba(20,40,42,.5);
     transform:translateY(106%);transition:transform .42s cubic-bezier(.22,1,.36,1);
-    max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-  #installSheet.show,#askSheet.show{transform:translateY(0)}
+    max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    /* a hidden sheet must never intercept clicks, which it otherwise does at
+       laptop width where it sits centred and invisible over the page */
+    pointer-events:none;visibility:hidden}
+  #installSheet.show,#askSheet.show{transform:translateY(0);pointer-events:auto;visibility:visible}
   .sheet-grip{width:42px;height:4px;border-radius:999px;background:var(--line);margin:0 auto 16px}
   #installSheet h2,#askSheet h2{font-family:'Fraunces',serif;font-weight:600;font-size:22px;line-height:1.15;margin-bottom:7px}
   #installSheet .sub,#askSheet .sub{font-size:14px;color:var(--ink-soft);line-height:1.5;margin-bottom:20px}
@@ -279,7 +285,7 @@
       padding:26px 26px 28px;box-shadow:var(--shadow);
       transform:translate(-50%,-46%) scale(.97);opacity:0;
       transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .28s ease}
-    #installSheet.show,#askSheet.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+    #installSheet.show,#askSheet.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto;visibility:visible}
     .sheet-grip{display:none}
   }
   @media(prefers-reduced-motion:reduce){
@@ -376,6 +382,7 @@
         <div class="sent" id="resendRow" style="display:block;color:var(--ink-soft)">Didn't get it? <a href="#" id="resendLink" style="color:var(--teal-deep)">Send again</a></div>
       </div>
       <div class="sent" id="loginSent">We emailed you a 6-digit code. Enter it above to open your portal.</div>
+      <div id="loginErr"></div>
       <div id="loginInstall" style="display:none">
         <p>Adding this to your home screen first means you only have to sign in once.</p>
         <button type="button" id="loginInstallBtn">Show me how</button>
@@ -1199,29 +1206,61 @@
       }
       show("loginView");
       let pendingEmail = "";
+      let verifying = false;
+      const errEl = $("loginErr");
+      const showErr = (msg)=>{ errEl.textContent = msg; errEl.style.display = msg ? "block" : "none"; };
+
       async function sendCode(){
         const email = $("loginEmail").value.trim();
-        if(!email) return;
+        if(!email){ showErr("Please enter your email address first."); return; }
+        showErr("");
         $("loginBtn").textContent="Sending...";
         const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true } });
         $("loginBtn").textContent="Send me my code";
-        if(error){ alert("Something went wrong. Please try again."); return; }
+        if(error){ showErr("We could not send that code. Please check the address and try again, or text Carson at (317) 903-5973."); return; }
         pendingEmail = email;
         $("emailStep").style.display="none";
         $("codeStep").style.display="block";
         $("loginSent").style.display="block";
+        $("loginCode").value="";
         $("loginCode").focus();
       }
-      $("loginBtn").onclick = sendCode;
-      $("resendLink").onclick = (e)=>{ e.preventDefault(); $("emailStep").style.display="block"; sendCode(); };
-      $("verifyBtn").onclick = async ()=>{
-        const token = $("loginCode").value.trim();
-        if(!token) return;
+
+      async function verifyCode(){
+        if(verifying) return;
+        const token = $("loginCode").value.replace(/\D/g,"");
+        if(token.length < 6) return;
+        verifying = true;
+        showErr("");
         $("verifyBtn").textContent="Signing in...";
         const { error } = await sb.auth.verifyOtp({ email: pendingEmail, token, type:"email" });
-        if(error){ $("verifyBtn").textContent="Sign in"; alert("That code didn't work. Check it and try again, or tap Send again."); return; }
+        if(error){
+          verifying = false;
+          $("verifyBtn").textContent="Sign in";
+          showErr("That code did not work. Codes expire after a while, so tap Send again for a fresh one.");
+          $("loginCode").select();
+          return;
+        }
         location.reload();
-      };
+      }
+
+      $("loginBtn").onclick = sendCode;
+      $("resendLink").onclick = (e)=>{ e.preventDefault(); showErr(""); $("emailStep").style.display="block"; sendCode(); };
+      $("verifyBtn").onclick = verifyCode;
+
+      /* Verify as soon as six digits are present. On a phone the first tap on
+         a button often only dismisses the keyboard, so the tap never reaches
+         it, which is why a code can appear to fail and then work on the second
+         try. Pasted codes also arrive with stray spaces, so strip anything
+         that is not a digit. */
+      $("loginCode").addEventListener("input", ()=>{
+        const el = $("loginCode");
+        const digits = el.value.replace(/\D/g,"").slice(0,6);
+        if(digits !== el.value) el.value = digits;
+        if(digits.length === 6) verifyCode();
+      });
+      $("loginEmail").addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ e.preventDefault(); sendCode(); } });
+      $("loginCode").addEventListener("keydown", (e)=>{ if(e.key==="Enter"){ e.preventDefault(); verifyCode(); } });
       return;
     }
 
