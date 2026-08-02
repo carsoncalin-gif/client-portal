@@ -47,6 +47,14 @@
     font-weight:700;font-size:15px;padding:14px;border-radius:12px;cursor:pointer;transition:.2s}
   .login-card button:hover{background:var(--teal-deep)}
   .login-card .sent{color:var(--green);font-size:14px;margin-top:14px;display:none}
+  /* Installing before signing in means one sign in instead of two, because a
+     new home screen app starts with empty storage. */
+  #loginInstall{margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
+  #loginInstall p{font-size:13px;color:var(--ink-soft);line-height:1.5;margin-bottom:13px}
+  #loginInstall button{width:100%;min-height:44px;border:1px solid var(--line);background:var(--card);
+    color:var(--ink);font-family:inherit;font-weight:600;font-size:14px;border-radius:11px;
+    cursor:pointer;transition:.15s;padding:0}
+  #loginInstall button:hover{background:var(--teal-wash);border-color:var(--teal);color:var(--teal-deep)}
 
   /* loading */
   #loadingView{display:none;min-height:80vh;align-items:center;justify-content:center;color:var(--ink-soft)}
@@ -362,6 +370,10 @@
         <div class="sent" id="resendRow" style="display:block;color:var(--ink-soft)">Didn't get it? <a href="#" id="resendLink" style="color:var(--teal-deep)">Send again</a></div>
       </div>
       <div class="sent" id="loginSent">We emailed you a 6-digit code. Enter it above to open your portal.</div>
+      <div id="loginInstall" style="display:none">
+        <p>Adding this to your home screen first means you only have to sign in once.</p>
+        <button type="button" id="loginInstallBtn">Show me how</button>
+      </div>
     </div>
   </div>
 
@@ -1348,7 +1360,11 @@
            + stepEl(3, "Tap <b>Add to Home Screen</b>.",
                     mockEl(ICON_ADDHOME, "Add to Home Screen", true))
            + stepEl(4, "Tap <b>Add</b> in the top right corner. That is it.")
-           + '<div class="sheet-note">The first time you open it from your home screen it may ask for your code once more. After that it keeps you signed in.</div>';
+           + '<div class="sheet-note">'
+           + (myEmail
+               ? "The first time you open it from your home screen it may ask for your code once more. After that it keeps you signed in."
+               : "Then open it from your home screen and sign in there. Doing it in that order means you only sign in once.")
+           + '</div>';
       foot = gotIt;
     } else if(kind==="ios-other"){
       title = "Keep your portal one tap away";
@@ -1463,6 +1479,9 @@
   });
   function wireInstall(){
     $("showInstall").onclick = openInstallSheet;
+    $("loginInstallBtn").onclick = openInstallSheet;
+    /* offered before signing in, so installing first is the easy path */
+    if(!isStandalone) $("loginInstall").style.display = "block";
     $("saveHomeLink").onclick = (e)=>{ e.preventDefault(); openInstallSheet(); };
     $("sheetBack").onclick = closeInstallSheet;
     document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeInstallSheet(); });
