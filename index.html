@@ -131,11 +131,17 @@
   .progress-fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--teal-deep));border-radius:999px;transition:width .6s ease}
   .progress-head .pct{font-size:12.5px;color:var(--ink-soft);font-weight:600;white-space:nowrap}
   .step.tappable{cursor:pointer}
-  .step .body h3{display:flex;align-items:center;gap:8px}
-  .step .chev{margin-left:auto;flex:none;width:16px;height:16px;color:var(--ink-soft);opacity:.55;transition:transform .25s}
-  .step.open .chev{transform:rotate(180deg)}
-  .step .detail{max-height:0;overflow:hidden;transition:max-height .3s ease}
-  .step.open .detail{max-height:700px}
+  /* a full height row so the whole title is the tap target, not just the text */
+  .step .body h3{display:flex;align-items:center;gap:10px;min-height:44px}
+  /* a circled plus reads as "there is more here" far better than a faint
+     chevron, and matches the collapsible cards in the admin */
+  .step .pm{margin-left:auto;flex:none;width:22px;height:22px;color:var(--ink-soft);opacity:.8;transition:opacity .2s}
+  .step .pm .v{transition:opacity .25s ease}
+  .step.open .pm .v{opacity:0}
+  .step:hover .pm{opacity:1;color:var(--teal-deep)}
+  .step .detail{max-height:0;overflow:hidden;transition:max-height .32s ease}
+  .step.open .detail{max-height:820px}
+  .step .detail .stepdesc{margin-top:0}
   .step .detail .inner{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
   .step .whatsnext{font-size:12.5px;color:var(--ink-soft);margin-top:10px}
   .step .whatsnext b{color:var(--teal-deep);font-weight:600}
@@ -876,29 +882,34 @@
 
     copy.steps.forEach((s,i)=>{
       if(brief && i!==idx) return;
-      const cls = i<c.current_index ? "done" : (i===c.current_index ? "current" : "");
-      const dot = i<c.current_index ? "&#10003;" : (i+1);
-      const badge = cls==="current" ? '<span class="badge">Happening now</span>' : "";
-      let detail="";
+      const isDone = i < c.current_index;
+      const isCurrent = i === c.current_index;
+      const cls = isDone ? "done" : (isCurrent ? "current" : "");
+      const dot = isDone ? "&#10003;" : (i+1);
+      const badge = isCurrent ? '<span class="badge">Happening now</span>' : "";
+
+      /* Only the step happening now shows its description without being asked.
+         For every other step it moves inside the fold, so the roadmap reads as
+         a short list of titles rather than sixteen lines of paragraphs. */
+      let detail = isCurrent ? "" : '<p class="stepdesc">'+esc(s.d)+'</p>';
       /* a finished step reads as a record of what happened, an upcoming one
          reads as a plan. Same step, different tense. */
-      const isDone = i < c.current_index;
       const list = isDone ? (s.did || s.prep) : s.prep;
       if(list){
         detail += '<div class="prep"><strong>'+(isDone ? "What we did" : "What to prepare for")+'</strong><ul>'
           + list.map(p=>'<li>'+esc(p)+'</li>').join("") + '</ul></div>';
       }
       if(i < total-1){ detail += '<div class="whatsnext">Up next: <b>'+esc(copy.steps[i+1].t)+'</b></div>'; }
-      const hasDetail = detail!=="";
-      const chev = hasDetail ? '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>' : "";
-      let body = badge + '<h3>'+esc(s.t)+chev+'</h3><p>'+esc(s.d)+'</p>';
-      if(hasDetail){ body += '<div class="detail"><div class="inner">'+detail+'</div></div>'; }
-      const step=document.createElement("div"); step.className="step "+cls+(hasDetail?" tappable":"");
+
+      const pm = '<svg class="pm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/><path class="v" d="M12 8v8"/></svg>';
+      let body = badge + '<h3>'+esc(s.t)+pm+'</h3>';
+      if(isCurrent) body += '<p>'+esc(s.d)+'</p>';
+      body += '<div class="detail"><div class="inner">'+detail+'</div></div>';
+
+      const step=document.createElement("div"); step.className="step "+cls+" tappable";
       step.innerHTML='<div class="rail"><div class="dot">'+dot+'</div><div class="bar"></div></div><div class="body">'+body+'</div>';
-      if(hasDetail){
-        if(cls==="current") step.classList.add("open");
-        step.querySelector(".body").addEventListener("click",()=>step.classList.toggle("open"));
-      }
+      if(isCurrent) step.classList.add("open");
+      step.querySelector(".body").addEventListener("click",()=>step.classList.toggle("open"));
       track.appendChild(step);
     });
 
