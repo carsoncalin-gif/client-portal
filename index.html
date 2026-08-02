@@ -1162,10 +1162,11 @@
 
   const INSTALL_KEY_PREFIX = "cc_install_v2:";
   const LEGACY_KEY_PREFIX = "cc_install_tip_v1:";
-  /* Which visits get an automatic nudge. Once was too shy: someone who
-     dismisses it without installing would never be offered again, and the
-     app is where the full timeline lives. Two spaced nudges, then silence. */
-  const NUDGE_ON_VISITS = [1, 3];
+  /* Two automatic nudges, then silence. Spaced by time rather than by visit
+     count, because counting page loads is not spacing: opening the portal
+     three times in an afternoon would burn both nudges within the hour. */
+  const MAX_NUDGES = 2;
+  const NUDGE_GAP_MS = 2 * 24 * 60 * 60 * 1000;
 
   function installKey(){ return INSTALL_KEY_PREFIX + (myEmail || "guest").toLowerCase(); }
   function installState(){
@@ -1174,7 +1175,7 @@
       if(raw) return JSON.parse(raw) || {};
       /* anyone who already saw the old one-time tip counts as having had visit one */
       const legacy = localStorage.getItem(LEGACY_KEY_PREFIX + (myEmail || "guest").toLowerCase());
-      return legacy === "1" ? { visits:1, shown:1 } : {};
+      return legacy === "1" ? { shown:1, lastShown:0 } : {};
     }catch(e){ return {}; }
   }
   function saveInstallState(s){ try{ localStorage.setItem(installKey(), JSON.stringify(s)); }catch(e){} }
@@ -1287,12 +1288,22 @@
   function maybeShowInstallTip(){
     if(isStandalone) return;
     if(deviceKind()==="desktop" && !deferredPrompt) return;
+    /* ?resetinstall=1 clears the record, so a first run can be tested again
+       without wiping all the site data for this person. */
+    if(new URLSearchParams(location.search).get("resetinstall")==="1"){
+      try{
+        localStorage.removeItem(installKey());
+        localStorage.removeItem(LEGACY_KEY_PREFIX + (myEmail||"guest").toLowerCase());
+      }catch(e){}
+    }
     const s = installState();
-    s.visits = (s.visits || 0) + 1;
-    const due = NUDGE_ON_VISITS.indexOf(s.visits) !== -1;
-    if(due) s.shown = (s.shown || 0) + 1;
+    const shown = s.shown || 0;
+    if(shown >= MAX_NUDGES) return;
+    if(shown > 0 && (Date.now() - (s.lastShown || 0)) < NUDGE_GAP_MS) return;
+    s.shown = shown + 1;
+    s.lastShown = Date.now();
     saveInstallState(s);
-    if(due) openInstallSheet();
+    openInstallSheet();
   }
   window.addEventListener("beforeinstallprompt", (e)=>{
     e.preventDefault();
