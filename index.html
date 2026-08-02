@@ -1149,6 +1149,13 @@
 
     const { data:{ session } } = await sb.auth.getSession();
     if(!session){
+      /* A freshly installed home screen app gets its own empty storage, so the
+         session from Safari does not come with it. Nothing is broken, but it
+         looks broken unless we say so. This is the only time they see it. */
+      if(isStandalone){
+        document.querySelector(".login-card h1").textContent = "One last step";
+        $("loginIntro").textContent = "Now that your portal is on your home screen it needs your code once, just this time. After this it keeps you signed in.";
+      }
       show("loginView");
       let pendingEmail = "";
       async function sendCode(){
