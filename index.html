@@ -127,7 +127,7 @@
   .step .chev{margin-left:auto;flex:none;width:16px;height:16px;color:var(--ink-soft);opacity:.55;transition:transform .25s}
   .step.open .chev{transform:rotate(180deg)}
   .step .detail{max-height:0;overflow:hidden;transition:max-height .3s ease}
-  .step.open .detail{max-height:420px}
+  .step.open .detail{max-height:700px}
   .step .detail .inner{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
   .step .whatsnext{font-size:12.5px;color:var(--ink-soft);margin-top:10px}
   .step .whatsnext b{color:var(--teal-deep);font-weight:600}
@@ -591,15 +591,29 @@
       sub:"Here is exactly where your home purchase stands and what comes next. Nothing for you to chase down. I will keep this updated as we move.",
       steps:[
         {t:"Game plan and approval",d:"We mapped out your plan, set your numbers, and we are ready to find your home.",
-          prep:["Have your preapproval letter ready so we know your range","Send me your must haves and your deal breakers","I line up tours the moment something fits"]},
-        {t:"Touring and offers",d:"We tour homes, weigh the options, and write your offer."},
-        {t:"Offer accepted",d:"Contract signed and earnest money delivered."},
+          prep:["Have your preapproval letter ready so we know your range","Send me your must haves and your deal breakers","I line up tours the moment something fits"],
+          did:["We set your budget and what matters most to you","Your preapproval is in hand, so your offers get taken seriously"]},
+        {t:"Touring and offers",d:"We tour homes, weigh the options, and write your offer.",
+          prep:["We tour in batches so you can compare while it is fresh","Tell me what you actually think, blunt is genuinely helpful","When one fits, we move quickly and write it up the same day"],
+          did:["We toured, compared honestly, and found the one","We wrote your offer with terms built to win, not just a price"]},
+        {t:"Offer accepted",d:"Contract signed and earnest money delivered.",
+          prep:["Earnest money is due within a few days of signing","Send it exactly where I tell you and nowhere else, wire fraud is real","The inspection clock starts the moment we are signed"],
+          did:["Your contract is signed and earnest money is delivered","The home is off the market"]},
         {t:"Inspection",d:"We are reviewing the home with your inspector and deciding on any repair requests.",
-          prep:["Read the inspection summary I send over","Flag anything that worries you","We respond to the seller within the inspection window"]},
-        {t:"Appraisal",d:"Your lender orders the appraisal to confirm the value."},
-        {t:"Loan approval",d:"Underwriting finishes and we get your clear to close."},
-        {t:"Final walkthrough",d:"One last look to confirm the home is move in ready."},
-        {t:"Closing day",d:"You sign, you fund, and the keys are yours."}
+          prep:["Come if you can, it is the most useful hour you will spend on this home","You get the full report plus my plain summary of what actually matters","We respond to the seller inside the inspection window"],
+          did:["The inspector went through the home and we read it together","We asked the seller for what mattered and let the small things go"]},
+        {t:"Appraisal",d:"Your lender orders the appraisal to confirm the value.",
+          prep:["Your lender orders this, there is nothing for you to arrange","It confirms the home is worth what you agreed to pay","If it comes in low we have options, and I will walk you through each one"],
+          did:["The home appraised and your price is supported","Your loan amount is confirmed"]},
+        {t:"Loan approval",d:"Underwriting finishes and we get your clear to close.",
+          prep:["Send your lender whatever they ask for the same day","Do not open new credit or change jobs before closing","Clear to close is the green light we are waiting on"],
+          did:["Underwriting is finished and you have your clear to close","Your financing is locked in"]},
+        {t:"Final walkthrough",d:"One last look to confirm the home is move in ready.",
+          prep:["We walk the home one last time, usually the day before closing","We check agreed repairs are done and nothing new is broken","We confirm anything that was supposed to stay is still there"],
+          did:["We walked the home and confirmed it was ready","Anything outstanding got handled before signing"]},
+        {t:"Closing day",d:"You sign, you fund, and the keys are yours.",
+          prep:["Bring a valid photo ID","Wire your funds ahead of time, never on the day, and call me to confirm the instructions","Signing usually takes under an hour, then the keys are yours"],
+          did:["You signed, the loan funded, and the home is yours","Keys in hand"]}
       ],
       celebHead:"Congratulations, the keys are yours.",
       celebSub:"Here is a simple look at where you stand today. Think of it as a yearly checkup on your home. I will refresh the estimate from time to time so you always know your position.",
@@ -615,15 +629,30 @@
       defaultStatus:"On the market",
       sub:"Here is where the sale of your home stands and what is coming up. I am handling the moving pieces. This page just keeps you in the loop.",
       steps:[
-        {t:"Listing prep",d:"Photos, staging, and pricing dialed in before we go live."},
-        {t:"Live on market",d:"Your home is active and getting in front of buyers."},
+        {t:"Listing prep",d:"Photos, staging, and pricing dialed in before we go live.",
+          prep:["We walk through together and agree what stays, what goes, and what is worth fixing","The photographer comes once the home is ready, not before","We set your price together off what has actually sold nearby"],
+          did:["We agreed what to change and what to leave alone","Photos are done and your price was set off real recent sales"]},
+        {t:"Live on market",d:"Your home is active and getting in front of buyers.",
+          prep:["Your listing goes out to every major site at once","Keep the home show ready when you reasonably can","I watch the first week closely and tell you what the traffic actually means"],
+          did:["Your listing went live everywhere at once","We tracked interest from the first day and adjusted as needed"]},
         {t:"Showings and offers",d:"Buyers are touring and we are tracking interest closely.",
-          prep:["Keep the home show ready when you can","I send you a recap after each showing","We review every offer together before responding"]},
-        {t:"Offer accepted",d:"We negotiate the best terms and go under contract."},
-        {t:"Inspection and repairs",d:"Buyer inspects and we handle any repair requests."},
-        {t:"Appraisal",d:"Buyer's lender confirms the home appraises for the price."},
-        {t:"Buyer financing",d:"We watch the buyer's loan through to clear to close."},
-        {t:"Closing day",d:"You sign, the sale records, and proceeds are on the way."}
+          prep:["I send you a recap after each showing, good or bad","Keep the home show ready when you can, short notice is common","We review every offer together before responding to anyone"],
+          did:["Buyers toured and I passed along what they said each time","We reviewed every offer together before responding"]},
+        {t:"Offer accepted",d:"We negotiate the best terms and go under contract.",
+          prep:["We weigh price against terms and how solid the buyer's financing looks","I handle the back and forth so you are not in the middle of it","Once signed, the clock starts on inspection and appraisal"],
+          did:["We took the strongest offer, which is not always the highest number","Your contract is signed and the timeline is running"]},
+        {t:"Inspection and repairs",d:"Buyer inspects and we handle any repair requests.",
+          prep:["The buyer's inspector visits, usually a couple of hours","You do not need to be there, I will be","We decide together what to accept, counter, or decline"],
+          did:["The inspection happened and we responded on your terms","Anything we agreed to is scheduled or already done"]},
+        {t:"Appraisal",d:"Buyer's lender confirms the home appraises for the price.",
+          prep:["The buyer's lender sends an appraiser to confirm the value","I send them the comparable sales that support your price","If it comes in low we have options, and I will walk you through each one"],
+          did:["The home appraised and your price held","No renegotiation needed"]},
+        {t:"Buyer financing",d:"We watch the buyer's loan through to clear to close.",
+          prep:["Underwriting reviews the buyer top to bottom","I check in with their lender weekly so nothing stalls quietly","Clear to close is the milestone we are waiting on"],
+          did:["The buyer's loan cleared underwriting","We have the clear to close in hand"]},
+        {t:"Closing day",d:"You sign, the sale records, and proceeds are on the way.",
+          prep:["Bring your ID, plus keys, garage remotes, and any manuals","Signing usually takes under an hour","Proceeds are wired or issued once the sale records"],
+          did:["You signed and the sale recorded","Your proceeds are on the way"]}
       ],
       celebHead:"Sold. Nicely done.",
       celebSub:"Here is a clean look at how the sale netted out. No fine print, just the big picture so the whole thing makes sense at a glance.",
@@ -640,14 +669,26 @@
   /* cash buyers: shorter roadmap + cash labels */
   const CASH_STEPS=[
     {t:"Game plan and budget",d:"We mapped out your plan, set your budget, and we are ready to find your home.",
-      prep:["Have your proof of funds ready so offers move fast","Send me your must haves and your deal breakers","I line up tours the moment something fits"]},
-    {t:"Touring and offers",d:"We tour homes, weigh the options, and write your offer."},
-    {t:"Offer accepted",d:"Contract signed and earnest money delivered."},
+      prep:["Have your proof of funds ready so offers move fast","Send me your must haves and your deal breakers","I line up tours the moment something fits"],
+      did:["We set your budget and what matters most to you","Proof of funds is ready, which makes your offers carry real weight"]},
+    {t:"Touring and offers",d:"We tour homes, weigh the options, and write your offer.",
+      prep:["We tour in batches so you can compare while it is fresh","Tell me what you actually think, blunt is genuinely helpful","Cash lets us move faster than most buyers, and we will use that"],
+      did:["We toured, compared honestly, and found the one","We wrote your offer with terms built to win, not just a price"]},
+    {t:"Offer accepted",d:"Contract signed and earnest money delivered.",
+      prep:["Earnest money is due within a few days of signing","Send it exactly where I tell you and nowhere else, wire fraud is real","The inspection clock starts the moment we are signed"],
+      did:["Your contract is signed and earnest money is delivered","The home is off the market"]},
     {t:"Inspection",d:"We are reviewing the home with your inspector and deciding on any repair requests.",
-      prep:["Read the inspection summary I send over","Flag anything that worries you","We respond to the seller within the inspection window"]},
-    {t:"Title and closing prep",d:"Title work clears and your funds get arranged for closing day."},
-    {t:"Final walkthrough",d:"One last look to confirm the home is move in ready."},
-    {t:"Closing day",d:"You sign, you fund, and the keys are yours."}
+      prep:["Come if you can, it is the most useful hour you will spend on this home","You get the full report plus my plain summary of what actually matters","We respond to the seller inside the inspection window"],
+      did:["The inspector went through the home and we read it together","We asked the seller for what mattered and let the small things go"]},
+    {t:"Title and closing prep",d:"Title work clears and your funds get arranged for closing day.",
+      prep:["The title company confirms the home is free of liens and claims","Your funds get arranged for the closing date","With no lender involved there are fewer moving parts and a faster path"],
+      did:["Title came back clear","Your funds are arranged and the date is set"]},
+    {t:"Final walkthrough",d:"One last look to confirm the home is move in ready.",
+      prep:["We walk the home one last time, usually the day before closing","We check agreed repairs are done and nothing new is broken","We confirm anything that was supposed to stay is still there"],
+      did:["We walked the home and confirmed it was ready","Anything outstanding got handled before signing"]},
+    {t:"Closing day",d:"You sign, you fund, and the keys are yours.",
+      prep:["Bring a valid photo ID","Wire your funds ahead of time, never on the day, and call me to confirm the instructions","Signing is quick with no loan paperwork, then the keys are yours"],
+      did:["You signed and the home is yours","Keys in hand"]}
   ];
   function copyFor(c){
     const base = COPY[c.role] || COPY.buyer;
@@ -827,7 +868,14 @@
       const dot = i<c.current_index ? "&#10003;" : (i+1);
       const badge = cls==="current" ? '<span class="badge">Happening now</span>' : "";
       let detail="";
-      if(s.prep){ detail += '<div class="prep"><strong>What to prepare for</strong><ul>'+s.prep.map(p=>'<li>'+esc(p)+'</li>').join("")+'</ul></div>'; }
+      /* a finished step reads as a record of what happened, an upcoming one
+         reads as a plan. Same step, different tense. */
+      const isDone = i < c.current_index;
+      const list = isDone ? (s.did || s.prep) : s.prep;
+      if(list){
+        detail += '<div class="prep"><strong>'+(isDone ? "What we did" : "What to prepare for")+'</strong><ul>'
+          + list.map(p=>'<li>'+esc(p)+'</li>').join("") + '</ul></div>';
+      }
       if(i < total-1){ detail += '<div class="whatsnext">Up next: <b>'+esc(copy.steps[i+1].t)+'</b></div>'; }
       const hasDetail = detail!=="";
       const chev = hasDetail ? '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>' : "";
