@@ -282,6 +282,10 @@
   /* portal footer / sign out */
   .portal-foot{text-align:center;color:var(--ink-soft);font-size:12.5px;margin:34px 0 10px}
   .portal-foot a{color:var(--teal-deep);font-weight:600;cursor:pointer}
+  .savehome{text-align:center;margin:0 0 14px}
+  .savehome a{display:inline-block;min-height:44px;line-height:44px;color:var(--teal-deep);font-weight:600;
+    font-size:13px;cursor:pointer;text-decoration:none;padding:0 6px}
+  .savehome a:hover{color:var(--ink)}
   .brokerage{text-align:center;color:var(--ink-soft);font-size:10.5px;letter-spacing:.06em;
     text-transform:uppercase;opacity:.6;margin:0 0 6px}
 
@@ -512,6 +516,7 @@
     </div>
 
     <div class="portal-foot" id="portalFoot" style="display:none">Signed in as <span id="meEmail"></span> &middot; <a href="#" id="footSettings">Portal settings</a> &middot; <a href="#" id="signOutLink">Sign out</a></div>
+    <div class="savehome" id="saveHomeRow" style="display:none"><a href="#" id="saveHomeLink">Save this to your home screen</a></div>
     <div class="brokerage">Brokered by eXp Realty</div>
   </div>
 
@@ -1155,10 +1160,24 @@
                        window.matchMedia("(display-mode: standalone)").matches;
   let deferredPrompt = null;
 
-  const INSTALL_KEY_PREFIX = "cc_install_tip_v1:";
+  const INSTALL_KEY_PREFIX = "cc_install_v2:";
+  const LEGACY_KEY_PREFIX = "cc_install_tip_v1:";
+  /* Which visits get an automatic nudge. Once was too shy: someone who
+     dismisses it without installing would never be offered again, and the
+     app is where the full timeline lives. Two spaced nudges, then silence. */
+  const NUDGE_ON_VISITS = [1, 3];
+
   function installKey(){ return INSTALL_KEY_PREFIX + (myEmail || "guest").toLowerCase(); }
-  function installTipSeen(){ try{ return localStorage.getItem(installKey())==="1"; }catch(e){ return false; } }
-  function markInstallTipSeen(){ try{ localStorage.setItem(installKey(), "1"); }catch(e){} }
+  function installState(){
+    try{
+      const raw = localStorage.getItem(installKey());
+      if(raw) return JSON.parse(raw) || {};
+      /* anyone who already saw the old one-time tip counts as having had visit one */
+      const legacy = localStorage.getItem(LEGACY_KEY_PREFIX + (myEmail || "guest").toLowerCase());
+      return legacy === "1" ? { visits:1, shown:1 } : {};
+    }catch(e){ return {}; }
+  }
+  function saveInstallState(s){ try{ localStorage.setItem(installKey(), JSON.stringify(s)); }catch(e){} }
 
   const ICON_SHARE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M8.5 6.5 12 3l3.5 3.5"/><path d="M7 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1"/></svg>';
   const ICON_ADDHOME = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg>';
@@ -1255,8 +1274,11 @@
     if(isStandalone){
       row.style.display = "none";
       $("installWhy").textContent = "You are all set, this portal is already saved to your home screen.";
+      $("saveHomeRow").style.display = "none";
     } else {
       row.style.display = "inline-block";
+      /* a quiet permanent way back, for anyone who dismissed the sheet */
+      $("saveHomeRow").style.display = "block";
     }
   }
   /* Show once, automatically, shortly after the portal first paints.
@@ -1264,10 +1286,13 @@
      and desktop get the real button rather than the manual instructions. */
   function maybeShowInstallTip(){
     if(isStandalone) return;
-    if(installTipSeen()) return;
     if(deviceKind()==="desktop" && !deferredPrompt) return;
-    markInstallTipSeen();
-    openInstallSheet();
+    const s = installState();
+    s.visits = (s.visits || 0) + 1;
+    const due = NUDGE_ON_VISITS.indexOf(s.visits) !== -1;
+    if(due) s.shown = (s.shown || 0) + 1;
+    saveInstallState(s);
+    if(due) openInstallSheet();
   }
   window.addEventListener("beforeinstallprompt", (e)=>{
     e.preventDefault();
@@ -1276,7 +1301,8 @@
     if($("installSheet").classList.contains("show")) renderInstallSheet();
   });
   function wireInstall(){
-    $("showInstall").onclick = ()=>{ markInstallTipSeen(); openInstallSheet(); };
+    $("showInstall").onclick = openInstallSheet;
+    $("saveHomeLink").onclick = (e)=>{ e.preventDefault(); openInstallSheet(); };
     $("sheetBack").onclick = closeInstallSheet;
     document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeInstallSheet(); });
     syncInstallRow();
