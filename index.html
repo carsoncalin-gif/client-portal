@@ -218,17 +218,28 @@
   .set-foot .saved.show{opacity:1}
 
   /* add to home screen sheet */
-  #sheetBack{position:fixed;inset:0;background:rgba(18,30,32,.55);backdrop-filter:blur(3px);
+  #sheetBack,#askBack{position:fixed;inset:0;background:rgba(18,30,32,.55);backdrop-filter:blur(3px);
     opacity:0;pointer-events:none;transition:opacity .28s ease;z-index:60}
-  #sheetBack.show{opacity:1;pointer-events:auto}
-  #installSheet{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--card);
+  #sheetBack.show,#askBack.show{opacity:1;pointer-events:auto}
+  #installSheet,#askSheet{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--card);
     border-radius:24px 24px 0 0;padding:22px 22px 26px;box-shadow:0 -22px 60px -20px rgba(20,40,42,.5);
     transform:translateY(106%);transition:transform .42s cubic-bezier(.22,1,.36,1);
     max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-  #installSheet.show{transform:translateY(0)}
+  #installSheet.show,#askSheet.show{transform:translateY(0)}
   .sheet-grip{width:42px;height:4px;border-radius:999px;background:var(--line);margin:0 auto 16px}
-  #installSheet h2{font-family:'Fraunces',serif;font-weight:600;font-size:22px;line-height:1.15;margin-bottom:7px}
-  #installSheet .sub{font-size:14px;color:var(--ink-soft);line-height:1.5;margin-bottom:20px}
+  #installSheet h2,#askSheet h2{font-family:'Fraunces',serif;font-weight:600;font-size:22px;line-height:1.15;margin-bottom:7px}
+  #installSheet .sub,#askSheet .sub{font-size:14px;color:var(--ink-soft);line-height:1.5;margin-bottom:20px}
+  #askSheet label{display:block;font-size:13px;font-weight:700;letter-spacing:.03em;color:var(--ink-soft);margin-bottom:7px}
+  #askSheet select,#askSheet textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 14px;
+    font-family:inherit;font-size:16px;outline:none;background:var(--card);color:var(--ink);margin-bottom:16px}
+  #askSheet select:focus,#askSheet textarea:focus{border-color:var(--teal)}
+  #askSheet textarea{min-height:120px;resize:vertical;line-height:1.5}
+  #askNote{font-size:13px;line-height:1.5;margin:0 0 14px;display:none}
+  #askDone{text-align:center;padding:14px 0 6px;display:none}
+  #askDone .tick{width:52px;height:52px;border-radius:50%;background:var(--teal-wash);color:var(--teal-deep);
+    display:grid;place-items:center;margin:0 auto 14px}
+  #askDone h3{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin-bottom:6px}
+  #askDone p{font-size:14px;color:var(--ink-soft);line-height:1.5}
   .istep{display:flex;gap:13px;margin-bottom:17px}
   .istep .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--teal-wash);
     color:var(--teal-deep);display:grid;place-items:center;font-size:13px;font-weight:700;margin-top:1px}
@@ -250,15 +261,15 @@
   .sheet-foot .ghost{background:var(--card);color:var(--ink-soft);border:1px solid var(--line)}
   .sheet-foot .ghost:hover{background:var(--paper)}
   @media(min-width:640px){
-    #installSheet{left:50%;right:auto;bottom:auto;top:50%;width:460px;border-radius:22px;
+    #installSheet,#askSheet{left:50%;right:auto;bottom:auto;top:50%;width:460px;border-radius:22px;
       padding:26px 26px 28px;box-shadow:var(--shadow);
       transform:translate(-50%,-46%) scale(.97);opacity:0;
       transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .28s ease}
-    #installSheet.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+    #installSheet.show,#askSheet.show{transform:translate(-50%,-50%) scale(1);opacity:1}
     .sheet-grip{display:none}
   }
   @media(prefers-reduced-motion:reduce){
-    #installSheet{transition:none}
+    #installSheet,#askSheet{transition:none}
   }
   .set-row .showme{border:1px solid var(--line);background:var(--paper);font-family:inherit;
     font-weight:600;font-size:13.5px;color:var(--ink);padding:11px 18px;border-radius:11px;cursor:pointer;transition:.15s}
@@ -518,6 +529,36 @@
     <div class="portal-foot" id="portalFoot" style="display:none">Signed in as <span id="meEmail"></span> &middot; <a href="#" id="footSettings">Portal settings</a> &middot; <a href="#" id="signOutLink">Sign out</a></div>
     <div class="savehome" id="saveHomeRow" style="display:none"><a href="#" id="saveHomeLink">Save this to your home screen</a></div>
     <div class="brokerage">Brokered by eXp Realty</div>
+  </div>
+
+  <!-- ASK A QUESTION -->
+  <div id="askBack"></div>
+  <div id="askSheet" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+    <div class="sheet-grip"></div>
+    <div id="askForm">
+      <h2 id="askTitle">Ask Carson a question</h2>
+      <p class="sub">He will get this straight away and reply to you directly.</p>
+      <label for="askTopic">What is this about?</label>
+      <select id="askTopic">
+        <option value="question">A question about my transaction</option>
+        <option value="showing">Request a showing</option>
+        <option value="document">Something about a document</option>
+        <option value="other">Something else</option>
+      </select>
+      <label for="askMessage">Your message</label>
+      <textarea id="askMessage" placeholder="Write as much or as little as you like."></textarea>
+      <p id="askNote"></p>
+      <div class="sheet-foot">
+        <button type="button" class="ghost" id="askCancel">Cancel</button>
+        <button type="button" class="primary" id="askSend">Send</button>
+      </div>
+    </div>
+    <div id="askDone">
+      <div class="tick"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h3>Sent to Carson</h3>
+      <p>He will get back to you shortly. If it is urgent, text or call him anytime.</p>
+      <div class="sheet-foot"><button type="button" class="primary" id="askClose">Done</button></div>
+    </div>
   </div>
 
   <!-- ADD TO HOME SCREEN WALKTHROUGH -->
@@ -1011,7 +1052,10 @@
     let html='<a class="action-btn" href="sms:'+phone+'"><span class="ic">'+msg+'</span>Text Carson</a>';
     html+='<a class="action-btn" href="tel:'+phone+'"><span class="ic">'+phoneI+'</span>Call Carson</a>';
     html+='<a class="action-btn" href="mailto:'+email+'"><span class="ic">'+mail+'</span>Email Carson</a>';
+    const q='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
+    html+='<a class="action-btn" href="#" id="askBtn"><span class="ic">'+q+'</span>Ask a question</a>';
     $("actions").innerHTML=html;
+    $("askBtn").onclick=(e)=>{ e.preventDefault(); openAsk(); };
   }
   function setupTabs(){
     document.querySelectorAll("#tabs .tab").forEach(btn=>{
@@ -1347,9 +1391,63 @@
     syncInstallRow();
   }
 
+  /* ---- ask Carson a question ---- */
+  function openAsk(){
+    $("askForm").style.display="block";
+    $("askDone").style.display="none";
+    $("askNote").style.display="none";
+    $("askMessage").value="";
+    $("askTopic").selectedIndex=0;
+    $("askSend").disabled=false;
+    $("askSend").textContent="Send";
+    $("askBack").classList.add("show");
+    $("askSheet").classList.add("show");
+  }
+  function closeAsk(){
+    $("askBack").classList.remove("show");
+    $("askSheet").classList.remove("show");
+  }
+  function askNote(text, bad){
+    const n=$("askNote");
+    n.textContent=text;
+    n.style.color = bad ? "#c0492f" : "var(--ink-soft)";
+    n.style.display="block";
+  }
+  async function sendAsk(){
+    const message=$("askMessage").value.trim();
+    if(!message){ askNote("Please write your message first.", true); $("askMessage").focus(); return; }
+    if(!sb){ askNote("You need to be signed in to send this.", true); return; }
+    $("askSend").disabled=true;
+    $("askSend").textContent="Sending...";
+    try{
+      const { data:{ session } } = await sb.auth.getSession();
+      if(!session){ throw new Error("no session"); }
+      const res = await fetch("/.netlify/functions/ask", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json", "Authorization":"Bearer "+session.access_token },
+        body: JSON.stringify({ topic:$("askTopic").value, message:message })
+      });
+      const out = await res.json().catch(()=>({}));
+      if(!res.ok){ throw new Error(out.error || "failed"); }
+      $("askForm").style.display="none";
+      $("askDone").style.display="block";
+    }catch(e){
+      $("askSend").disabled=false;
+      $("askSend").textContent="Send";
+      askNote("That did not send. Please text or call Carson instead, or try again in a moment.", true);
+    }
+  }
+  function wireAsk(){
+    $("askCancel").onclick=closeAsk;
+    $("askClose").onclick=closeAsk;
+    $("askBack").onclick=closeAsk;
+    $("askSend").onclick=sendAsk;
+  }
+
   setupTabs();
   wireSettings();
   wireInstall();
+  wireAsk();
   boot();
 </script>
 </body>
