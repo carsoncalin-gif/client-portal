@@ -1,8 +1,10 @@
 // Minimal service worker. Its main job is to make the portal installable
 // as a home screen app. It also caches the shell so a return visit opens fast.
 
-const CACHE = "home-portal-v1";
-const SHELL = ["./", "./index.html", "./manifest.json"];
+// Bump CACHE whenever the shell changes, so anyone with the app already on
+// their home screen gets a clean copy instead of a stale one.
+const CACHE = "home-portal-v2";
+const SHELL = ["./", "./index.html", "./manifest.json", "./text.html"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));
