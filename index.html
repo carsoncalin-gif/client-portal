@@ -1183,6 +1183,8 @@
   const ICON_SHARE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M8.5 6.5 12 3l3.5 3.5"/><path d="M7 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-1"/></svg>';
   const ICON_ADDHOME = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M12 8v8M8 12h8"/></svg>';
   const ICON_DOTS = '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg>';
+  /* newer iOS collapses the share actions behind this circled chevron */
+  const ICON_MORE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 10.5 12 14l3.5-3.5"/></svg>';
 
   function deviceKind(){
     const ua = navigator.userAgent;
@@ -1218,15 +1220,17 @@
       sub = "Add it to your home screen and it opens like an app, with no link to hunt for and no password to remember.";
       body = stepEl(1, "Tap the <b>Share</b> icon. It sits in the bar at the bottom of your screen.",
                     mockEl(ICON_SHARE, "Share", true))
-           + stepEl(2, "Scroll down the list and tap <b>Add to Home Screen</b>.",
+           + stepEl(2, "Look down the list for <b>Add to Home Screen</b>. If you do not see it, tap the circled arrow to show more options.",
+                    mockEl(ICON_MORE, "Show more options", true))
+           + stepEl(3, "Tap <b>Add to Home Screen</b>.",
                     mockEl(ICON_ADDHOME, "Add to Home Screen", true))
-           + stepEl(3, "Tap <b>Add</b> in the top right corner. That is it.");
+           + stepEl(4, "Tap <b>Add</b> in the top right corner. That is it.");
       foot = gotIt;
     } else if(kind==="ios-other"){
       title = "Keep your portal one tap away";
       sub = "Add it to your home screen and it opens like an app.";
       body = stepEl(1, "Open your browser menu and choose <b>Share</b>.", mockEl(ICON_SHARE, "Share", true))
-           + stepEl(2, "Tap <b>Add to Home Screen</b>, then <b>Add</b>.", mockEl(ICON_ADDHOME, "Add to Home Screen", true))
+           + stepEl(2, "Tap <b>Add to Home Screen</b>, then <b>Add</b>. If you do not see it, tap the circled arrow to show more options.", mockEl(ICON_ADDHOME, "Add to Home Screen", true))
            + '<div class="sheet-note">If you do not see that option, open portal.carsoncalin.com in Safari and try these steps again.</div>';
       foot = gotIt;
     } else if(kind==="android"){

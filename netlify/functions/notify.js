@@ -134,7 +134,7 @@ function emailHtml({ title, body, address, portalUrl }) {
             <td bgcolor="#f5f1ea" style="background-color:#f5f1ea;border-radius:12px;padding:16px 18px;">
               <p style="margin:0 0 8px;font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1.2px;text-transform:uppercase;color:#0a7a87;">Not saved to your phone yet?</p>
               <p style="margin:0 0 10px;font-family:${SANS};font-size:13px;line-height:1.6;color:#4a5a5d;">Set it up once and your portal lives on your home screen like an app, so you never hunt for a link again.</p>
-              <p style="margin:0 0 6px;font-family:${SANS};font-size:13px;line-height:1.6;color:#1b2426;"><b>On an iPhone</b>, open <a href="${esc(portalUrl)}" style="color:#0a7a87;text-decoration:underline;">portal.carsoncalin.com</a> in Safari, tap the Share icon in the bar at the bottom of your screen, then tap Add to Home Screen.</p>
+              <p style="margin:0 0 6px;font-family:${SANS};font-size:13px;line-height:1.6;color:#1b2426;"><b>On an iPhone</b>, open <a href="${esc(portalUrl)}" style="color:#0a7a87;text-decoration:underline;">portal.carsoncalin.com</a> in Safari and tap the Share icon at the bottom of your screen. Look for Add to Home Screen, and if you do not see it, tap the circled arrow to show more options. Then tap Add.</p>
               <p style="margin:0;font-family:${SANS};font-size:13px;line-height:1.6;color:#1b2426;"><b>On an Android phone</b>, open that same address, then your browser menu, the three dots in the corner, and tap Install app.</p>
             </td>
           </tr></table>
