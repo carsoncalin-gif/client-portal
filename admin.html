@@ -95,6 +95,12 @@
   .save-bar .btn{flex:1}
   #closingCard{display:none}
 
+  /* per person detail level control */
+  .lvlseg{display:flex;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:4px;margin-top:8px;max-width:280px}
+  .lvlseg button{flex:1;min-height:38px;border:0;background:transparent;font-family:inherit;font-weight:600;
+    font-size:13px;color:var(--ink-soft);border-radius:8px;cursor:pointer;transition:.15s}
+  .lvlseg button.on{background:var(--ink);color:#fff}
+
   /* invite picker sheet */
   #inviteBack{position:fixed;inset:0;background:rgba(18,30,32,.5);backdrop-filter:blur(3px);
     opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:60}
@@ -415,26 +421,50 @@
       (data||[]).forEach(p=>{ if(p.email) prefsByEmail[p.email.trim().toLowerCase()]=p; });
     }catch(e){}
   }
+  /* Carson sets a sensible starting point per person. The moment that person
+     changes it themselves the row is theirs and this turns read only. */
   function prefLine(email){
     const e=(email||"").trim().toLowerCase();
     if(!e) return "";
     const p=prefsByEmail[e];
-    let detail;
-    if(!p){
-      detail='<span style="color:var(--ink-soft)">Has not opened their settings yet, so they see everything.</span>';
-    } else {
-      const bits=[];
-      bits.push(p.detail_level==="headlines" ? "Headlines only" : "Full detail");
+    const theirs = !!(p && p.set_by_client);
+    const level = p ? p.detail_level : "everything";
+
+    let status;
+    if(theirs){
+      const bits=[level==="headlines" ? "Headlines only" : "Full detail"];
       bits.push(p.show_numbers ? "figures visible" : "figures tucked away");
       if(p.display_name) bits.push('goes by "'+esc(p.display_name)+'"');
-      const when=p.updated_at ? " · set "+ago(p.updated_at) : "";
-      detail='<span style="color:var(--ink-soft)">'+bits.join(", ")+esc(when)+'</span>';
+      status='<span style="color:var(--ink-soft)">They set this themselves: '+bits.join(", ")
+        +esc(p.updated_at ? " · "+ago(p.updated_at) : "")+'</span>';
+    } else if(p){
+      status='<span style="color:var(--ink-soft)">Starting point you set. They can change it anytime.</span>';
+    } else {
+      status='<span style="color:var(--ink-soft)">Not set. They will see everything until they choose.</span>';
     }
-    return '<div style="margin-bottom:9px"><b style="font-weight:600">'+esc(email)+'</b><br>'+detail+'</div>';
+
+    const seg = theirs ? "" :
+      '<div class="lvlseg" data-email="'+esc(e)+'">'
+      + '<button type="button" data-v="headlines"'+(level==="headlines"?' class="on"':'')+'>Headlines</button>'
+      + '<button type="button" data-v="everything"'+(level!=="headlines"?' class="on"':'')+'>Everything</button>'
+      + '</div>';
+
+    return '<div style="margin-bottom:14px"><b style="font-weight:600">'+esc(email)+'</b><br>'+status+seg+'</div>';
   }
   function renderPrefsView(){
     const html=prefLine($("f_email").value)+prefLine($("f_email2").value);
     $("prefsView").innerHTML = html || '<span style="color:var(--ink-soft)">Add a sign-in email first.</span>';
+    $("prefsView").querySelectorAll(".lvlseg button").forEach(b=>{
+      b.onclick=()=>setDetailLevel(b.closest(".lvlseg").dataset.email, b.dataset.v);
+    });
+  }
+  async function setDetailLevel(email, level){
+    const row={ email:email, detail_level:level, set_by_client:false };
+    const { error } = await sb.from("preferences").upsert(row, { onConflict:"email" });
+    if(error){ toast("Could not save that: "+error.message); return; }
+    prefsByEmail[email]=Object.assign({}, prefsByEmail[email]||{}, row);
+    renderPrefsView();
+    toast(level==="headlines" ? "Set to Headlines only" : "Set to Full detail");
   }
 
   async function loadClients(){

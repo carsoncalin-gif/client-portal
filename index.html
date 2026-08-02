@@ -686,15 +686,19 @@
         detail_level: myPrefs.detail_level,
         show_numbers: !!myPrefs.show_numbers,
         notify_email: !!myPrefs.notify_email,
+        /* the moment a person chooses for themselves it becomes theirs, and
+           Carson's starting point in the admin turns read only */
+        set_by_client: true,
         display_name: (myPrefs.display_name||"").trim() || null,
         updated_at: new Date().toISOString()
       };
       let res = await sb.from("preferences").upsert(row, { onConflict:"email" });
       /* If the notify_email column has not been added yet, save everything else
          rather than losing the whole change. Keeps settings working regardless. */
-      if(res.error && /notify_email/i.test(res.error.message||"")){
+      if(res.error && /notify_email|set_by_client/i.test(res.error.message||"")){
         const fallback = Object.assign({}, row);
         delete fallback.notify_email;
+        delete fallback.set_by_client;
         res = await sb.from("preferences").upsert(fallback, { onConflict:"email" });
       }
       const error = res.error;
@@ -999,16 +1003,14 @@
   function renderActions(role){
     const email="carsoncalin@livindyrealty.com";
     const phone="+13179035973";
-    const mk=(label,subject,icon)=>'<a class="action-btn" href="mailto:'+email+'?subject='+encodeURIComponent(subject)+'"><span class="ic">'+icon+'</span>'+label+'</a>';
     const msg='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
     const phoneI='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
-    const home='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
-    const q='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
+    /* Three ways to reach a person, not four. Market update and Ask a question
+       were both a mailto with a subject line, which is the same thing twice. */
+    const mail='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>';
     let html='<a class="action-btn" href="sms:'+phone+'"><span class="ic">'+msg+'</span>Text Carson</a>';
     html+='<a class="action-btn" href="tel:'+phone+'"><span class="ic">'+phoneI+'</span>Call Carson</a>';
-    if(role==="seller") html+=mk("Market update","Can I get an update on my listing?",home);
-    else html+=mk("Request a showing","I'd like to request a showing",home);
-    html+=mk("Ask a question","I have a question about my transaction",q);
+    html+='<a class="action-btn" href="mailto:'+email+'"><span class="ic">'+mail+'</span>Email Carson</a>';
     $("actions").innerHTML=html;
   }
   function setupTabs(){
