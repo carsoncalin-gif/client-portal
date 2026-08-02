@@ -94,6 +94,27 @@
   .save-bar .btn{flex:1}
   #closingCard{display:none}
 
+  /* invite picker sheet */
+  #inviteBack{position:fixed;inset:0;background:rgba(18,30,32,.5);backdrop-filter:blur(3px);
+    opacity:0;pointer-events:none;transition:opacity .25s ease;z-index:60}
+  #inviteBack.show{opacity:1;pointer-events:auto}
+  #invitePick{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--card);
+    border-radius:24px 24px 0 0;padding:20px 20px 26px;box-shadow:0 -22px 60px -20px rgba(20,40,42,.5);
+    transform:translateY(106%);transition:transform .38s cubic-bezier(.22,1,.36,1);
+    max-height:85vh;overflow-y:auto}
+  #invitePick.show{transform:translateY(0)}
+  #invitePick .sheet-grip{width:42px;height:4px;border-radius:999px;background:var(--line);margin:0 auto 16px}
+  #invitePick h2{font-size:20px;font-weight:600;margin-bottom:6px}
+  #invitePick .sub{font-size:13.5px;color:var(--ink-soft);line-height:1.5;margin-bottom:18px}
+  #invitePickRows .btn{margin-bottom:10px;text-align:left;font-size:14.5px;line-height:1.35}
+  @media(min-width:640px){
+    #invitePick{left:50%;right:auto;bottom:auto;top:50%;width:430px;border-radius:20px;padding:24px;
+      transform:translate(-50%,-46%) scale(.97);opacity:0;
+      transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .26s ease}
+    #invitePick.show{transform:translate(-50%,-50%) scale(1);opacity:1}
+    #invitePick .sheet-grip{display:none}
+  }
+
   /* toast */
   #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:18px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:min(92vw,430px);line-height:1.4;text-align:center;overflow-wrap:anywhere}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -289,12 +310,6 @@
           <div class="hint">The two percentages should add to 100.</div>
         </div>
 
-        <div class="card" id="invitePick" style="display:none">
-          <h3>Who is this invite for?</h3>
-          <div id="invitePickRows"></div>
-          <div class="hint" style="margin-top:10px">Each person signs in with their own email, so they each get their own invite.</div>
-        </div>
-
         <div class="save-bar">
           <button class="btn ghost" id="copyInvite">Invite</button>
           <button class="btn ghost" id="copyLink">Link</button>
@@ -304,6 +319,16 @@
       </div>
 
     </div>
+  </div>
+
+  <!-- invite picker, a sheet so it cannot be mistaken for another form card -->
+  <div id="inviteBack"></div>
+  <div id="invitePick" role="dialog" aria-modal="true">
+    <div class="sheet-grip"></div>
+    <h2>Who is this invite for?</h2>
+    <p class="sub">Each person signs in with their own email, so they each get their own message.</p>
+    <div id="invitePickRows"></div>
+    <button class="btn ghost" id="inviteCancel" style="margin-top:6px">Cancel</button>
   </div>
 
   <div id="toast"></div>
@@ -791,7 +816,7 @@
     activeSub=0; applyMode();
     dealToForm(subDeals[0]);
     renderPrefsView();
-    $("invitePick").style.display="none";
+    closeInvitePick();
     document.querySelectorAll(".optcard").forEach(el=>el.classList.toggle("collapsed", !c));
     $("deleteBtn").style.display = c ? "inline-flex" : "none";
     $("listView").style.display="none"; $("editView").style.display="block";
@@ -817,23 +842,28 @@
     const noun = role==="seller" ? "home sale" : role==="both" ? "move" : "home purchase";
     return "Hi "+name+"! I set up Carson's Concierge for you, a private portal where you can follow your "+noun+" every step of the way. Where things stand, what is next, photos, key dates, and your documents, all in one place.\n\n"+PORTAL_LABEL+"\n\nEnter your email"+(email?" ("+email+")":"")+" and you'll get a secure 6-digit code to sign in. No password to remember.\n\nWhen you open it, it will show you how to save it to your home screen so it sits there like an app.\n\nCarson";
   }
+  function closeInvitePick(){
+    $("invitePick").classList.remove("show");
+    $("inviteBack").classList.remove("show");
+  }
   async function copyInviteFor(email){
     try{
       await navigator.clipboard.writeText(inviteMsg(email));
-      toast(email ? "Invite for "+email+" copied" : "Invite copied");
+      toast("Invite for "+email+" copied, paste it into a text");
     }catch(e){ toast("Copy failed"); }
-    $("invitePick").style.display="none";
+    closeInvitePick();
   }
   function openInvitePick(e1, e2){
     const wrap=$("invitePickRows"); wrap.innerHTML="";
     [e1, e2].filter(Boolean).forEach(em=>{
       const b=document.createElement("button");
-      b.className="btn ghost"; b.style.marginBottom="8px"; b.textContent=em;
+      b.className="btn ghost";
+      b.textContent="Copy invite for "+em;
       b.onclick=()=>copyInviteFor(em);
       wrap.appendChild(b);
     });
-    $("invitePick").style.display="block";
-    $("invitePick").scrollIntoView({behavior:"smooth", block:"center"});
+    $("inviteBack").classList.add("show");
+    $("invitePick").classList.add("show");
   }
 
   async function save(){
@@ -913,9 +943,12 @@
     };
     $("copyInvite").onclick=()=>{
       const e1=$("f_email").value.trim(), e2=$("f_email2").value.trim();
+      if(!e1 && !e2){ toast("Add a sign-in email first."); return; }
       if(!e2){ copyInviteFor(e1); return; }
       openInvitePick(e1, e2);
     };
+    $("inviteCancel").onclick=closeInvitePick;
+    $("inviteBack").onclick=closeInvitePick;
     document.querySelectorAll(".optcard h3").forEach(h=>h.onclick=()=>h.parentElement.classList.toggle("collapsed"));
     document.querySelectorAll("#phaseChips .chip").forEach(b=>b.onclick=()=>{
       phaseFilter=b.dataset.f;
