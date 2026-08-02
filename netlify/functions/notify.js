@@ -79,7 +79,35 @@ function button({ href, label, bg, color, border }) {
   <tr><td height="12" style="height:12px;line-height:12px;font-size:0;">&nbsp;</td></tr>`;
 }
 
+/* TEMPORARY DIAGNOSTIC. Apple Mail refuses the sms: link that works fine in
+   the portal and in a browser, so this renders every plausible variant to
+   find which one Mail actually honours. Triggered only by a message titled
+   "SMS TEST", so no client can ever see it. Delete once we know the answer. */
+function smsTestHtml() {
+  const variants = [
+    ["A", "sms:3179035973", "no plus, ten digits"],
+    ["B", "sms:+13179035973", "plus and country code"],
+    ["C", "sms://3179035973", "double slash"],
+    ["D", "sms:/3179035973", "single slash"],
+    ["E", "sms:+1-317-903-5973", "dashes in the number"],
+    ["F", "sms:3179035973?body=Hi%20Carson", "with a prefilled body"],
+  ];
+  const rows = variants
+    .map(
+      ([k, href, note]) =>
+        `<tr><td align="center" bgcolor="#1b2426" height="52" style="background-color:#1b2426;border-radius:12px;">
+          <a href="${href}" style="display:block;padding:15px 18px;font-family:${SANS};font-size:15px;font-weight:bold;line-height:20px;color:#ffffff;text-decoration:none;border-radius:12px;">${k}. ${esc(note)}</a>
+        </td></tr>
+        <tr><td height="10" style="height:10px;line-height:10px;font-size:0;">&nbsp;</td></tr>`
+    )
+    .join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table>
+    <p style="margin:6px 0 0;font-family:${SANS};font-size:15px;line-height:1.6;color:#1b2426;text-align:center;">G. plain text, no link: <b>${PHONE_PRETTY}</b></p>
+    <p style="margin:14px 0 0;font-family:${SANS};font-size:13px;line-height:1.6;color:#4a5a5d;">Tap each one and tell me which letters open Messages.</p>`;
+}
+
 function emailHtml({ title, body, address, portalUrl }) {
+  const smsTest = /^sms\s*test$/i.test(String(title || "").trim());
   const where = address ? " on " + esc(address) : "";
   const plain = String(body == null ? "" : body).replace(/\s+/g, " ").trim();
   const preheader = plain
@@ -120,10 +148,10 @@ function emailHtml({ title, body, address, portalUrl }) {
 
           <p style="margin:22px 0 20px;padding-top:18px;border-top:1px solid #e6ded2;font-family:${SANS};font-size:13.5px;line-height:1.55;color:#4a5a5d;">Your full timeline, documents and dates are in Carson's Concierge, the app on your home screen. Or just reach me directly, whichever is easier.</p>
 
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+          ${smsTest ? smsTestHtml() : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
             ${button({ href: "sms:" + PHONE_SMS, label: "Text Carson", bg: "#1b2426", color: "#ffffff" })}
             ${button({ href: "tel:" + PHONE, label: "Call Carson", bg: "#ffffff", color: "#1b2426", border: "#1b2426" })}
-          </table>
+          </table>`}
 
           <p style="margin:2px 0 20px;font-family:${SANS};font-size:15px;line-height:1.6;color:#1b2426;text-align:center;">Or text or call me anytime at <b>${PHONE_PRETTY}</b></p>
 
