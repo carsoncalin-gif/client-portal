@@ -367,7 +367,7 @@
 
   const BUYER_STAGES=["Game plan and approval","Touring and offers","Offer accepted","Inspection","Appraisal","Loan approval","Final walkthrough","Closing day"];
   const CASH_STAGES=["Game plan and budget","Touring and offers","Offer accepted","Inspection","Title and closing prep","Final walkthrough","Closing day"];
-  const SELLER_STAGES=["Listing prep","Live on market","Showings and offers","Offer accepted","Inspection and repairs","Appraisal","Buyer financing","Closing day"];
+  const SELLER_STAGES=["Listing prep","Live on market","Showings and offers","Offer accepted","Inspection review and response","Appraisal","Buyer financing","Closing day"];
   function stagesFor(role, financing){
     if(role==="seller") return SELLER_STAGES;
     return financing==="cash" ? CASH_STAGES : BUYER_STAGES;
