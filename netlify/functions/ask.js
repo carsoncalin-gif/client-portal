@@ -17,7 +17,7 @@ const MAX_MESSAGE = 4000;
 const TOPICS = {
   question: "A question about my transaction",
   showing: "Request a showing",
-  document: "Something about a document",
+  document: "Request a document",
   other: "Something else",
 };
 
