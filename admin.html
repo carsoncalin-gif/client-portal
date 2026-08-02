@@ -313,9 +313,13 @@
   const SUPABASE_URL = "https://vnqicwaslxynefzyvvjo.supabase.co";
   const SUPABASE_ANON_KEY = "sb_publishable_niTtBPiLg9trvKnZXwXGhA_uQ_Ry9lZ";
   const ADMIN_EMAIL = "carsoncalin@livindyrealty.com";
-  const PORTAL_URL = location.origin + "/";
-  /* clean label for texts and emails. A bare host autolinks in iOS and Android messages. */
-  const PORTAL_LABEL = location.host;
+  /* The client facing address is fixed, never derived from wherever this page
+     happens to be open. Opening admin from the Netlify dashboard used to put
+     the netlify.app address into client invites. */
+  const PORTAL_URL = "https://portal.carsoncalin.com/";
+  const PORTAL_LABEL = "portal.carsoncalin.com";
+  /* Previewing a client stays on the current origin so the admin session works. */
+  const PREVIEW_BASE = location.origin + "/";
 
   const BUYER_STAGES=["Game plan and approval","Touring and offers","Offer accepted","Inspection","Appraisal","Loan approval","Final walkthrough","Closing day"];
   const CASH_STAGES=["Game plan and budget","Touring and offers","Offer accepted","Inspection","Title and closing prep","Final walkthrough","Closing day"];
@@ -453,7 +457,7 @@
       card.innerHTML='<div class="av">'+initial+'</div><div class="who"><b>'+esc(c.client_name||"(no name)")+'</b><span>'+sub+'</span></div>'+badge+prev+adv;
       card.onclick=()=>openEditor(c);
       const pb=card.querySelector(".pv");
-      if(pb) pb.onclick=(e)=>{ e.stopPropagation(); window.open(PORTAL_URL+"?preview="+c.id, "_blank"); };
+      if(pb) pb.onclick=(e)=>{ e.stopPropagation(); window.open(PREVIEW_BASE+"?preview="+c.id, "_blank"); };
       const ab=card.querySelector(".ad");
       if(ab) ab.onclick=(e)=>{ e.stopPropagation(); advanceStage(c); };
       wrap.appendChild(card);
