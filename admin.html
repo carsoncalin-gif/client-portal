@@ -173,7 +173,7 @@
             <h3 id="updEdTitle">New message</h3>
             <div class="field"><label>Send to</label>
               <select id="u_client"><option value="">Everyone</option></select>
-              <div class="hint">Everyone posts to all your clients. Pick one client and only that transaction sees it. Both people on a deal always see the same message.</div>
+              <div class="hint">Every message goes to one transaction. Both people on that deal see the same message. There is no way to message all your clients at once.</div>
             </div>
             <div class="field" id="u_sideField" style="display:none"><label>Which deal</label>
               <select id="u_side">
@@ -191,7 +191,7 @@
             </div>
           </div>
           <div id="updList"></div>
-          <div class="hint" style="margin-top:10px">A message sent to Everyone reaches all your clients. A message sent to one client appears pinned at the top of their portal, right under their address. Hide one to take it down without deleting it.</div>
+          <div class="hint" style="margin-top:10px">A message appears pinned at the top of that client's portal, right under their address, and is emailed to both people on the deal. Hide one to take it down without deleting it.</div>
         </div>
       </div>
 
@@ -521,11 +521,18 @@
       wrap.appendChild(card);
     });
   }
-  function fillUpdClients(){
+  /* No broadcast option on purpose. Every message goes to one transaction,
+     so there is no way to reach every client by mistake. The database and
+     the portal still understand a message with no client as a broadcast, so
+     turning this back on later is a single option, not a rebuild.
+     A message that is already a broadcast keeps its own option while being
+     edited, so opening an old post cannot silently narrow its audience. */
+  function fillUpdClients(existing){
     const sel=$("u_client");
     const active=clients.filter(c=>c.phase!=="closed");
     const closed=clients.filter(c=>c.phase==="closed");
-    let html='<option value="">Everyone</option>';
+    let html='<option value="">Choose a client...</option>';
+    if(existing && !existing.client_id) html+='<option value="__all__">All clients (existing post)</option>';
     active.forEach(c=>{ html+='<option value="'+esc(c.id)+'">'+esc(c.client_name||"(no name)")+'</option>'; });
     closed.forEach(c=>{ html+='<option value="'+esc(c.id)+'">'+esc(c.client_name||"(no name)")+' (closed)</option>'; });
     sel.innerHTML=html;
@@ -539,13 +546,13 @@
     /* name the real audience, so "visible" can never be read as "everyone" */
     $("u_pubLabel").textContent = c
       ? "Visible to "+(c.client_name||"this client")
-      : "Visible to all clients";
+      : (id==="__all__" ? "Visible to all clients" : "Visible once you choose a client");
   }
   function openUpdEditor(u){
     editingUpdId = u ? u.id : null;
     $("updEdTitle").textContent = u ? "Edit message" : "New message";
-    fillUpdClients();
-    $("u_client").value = (u && u.client_id) ? u.client_id : "";
+    fillUpdClients(u);
+    $("u_client").value = u ? (u.client_id || "__all__") : "";
     onUpdClientChange();
     $("u_side").value = (u && u.deal_side) ? u.deal_side : "";
     $("u_title").value = u ? u.title : "";
@@ -560,7 +567,9 @@
   async function saveUpdate(){
     const title=$("u_title").value.trim(), body=$("u_body").value.trim();
     if(!title || !body){ toast("Title and message are required."); return; }
-    const cid=$("u_client").value || null;
+    const picked=$("u_client").value;
+    if(!picked){ toast("Choose which client this message is for."); $("u_client").focus(); return; }
+    const cid = picked==="__all__" ? null : picked;
     const row={ title, body, published:$("u_pub").checked,
                 client_id: cid,
                 deal_side: cid ? ($("u_side").value || null) : null };

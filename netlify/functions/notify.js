@@ -45,6 +45,9 @@ function esc(s) {
 const SERIF = "Georgia,'Times New Roman',Times,serif";
 const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
 const PHONE = "+13179035973";
+/* iOS Mail is inconsistent about sms: links carrying a leading plus and
+   country code, while tel: handles it fine. Same number, no plus, for SMS. */
+const PHONE_SMS = "3179035973";
 const PHONE_PRETTY = "(317) 903-5973";
 
 /* The message itself renders in the email, so a client who never taps
@@ -118,11 +121,11 @@ function emailHtml({ title, body, address, portalUrl }) {
           <p style="margin:22px 0 20px;padding-top:18px;border-top:1px solid #e6ded2;font-family:${SANS};font-size:13.5px;line-height:1.55;color:#4a5a5d;">Your full timeline, documents and dates are in Carson's Concierge, the app on your home screen. Or just reach me directly, whichever is easier.</p>
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            ${button({ href: "sms:" + PHONE, label: "Text Carson", bg: "#1b2426", color: "#ffffff" })}
+            ${button({ href: "sms:" + PHONE_SMS, label: "Text Carson", bg: "#1b2426", color: "#ffffff" })}
             ${button({ href: "tel:" + PHONE, label: "Call Carson", bg: "#ffffff", color: "#1b2426", border: "#1b2426" })}
           </table>
 
-          <p style="margin:2px 0 20px;font-family:${SANS};font-size:14px;line-height:1.55;color:#4a5a5d;text-align:center;">Or reach me anytime at ${PHONE_PRETTY}</p>
+          <p style="margin:2px 0 20px;font-family:${SANS};font-size:15px;line-height:1.6;color:#1b2426;text-align:center;">Or text or call me anytime at <b>${PHONE_PRETTY}</b></p>
 
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
             <td bgcolor="#f5f1ea" style="background-color:#f5f1ea;border-radius:12px;padding:16px 18px;">
