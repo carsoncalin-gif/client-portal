@@ -1289,12 +1289,27 @@
   /* Show once, automatically, shortly after the portal first paints.
      The small delay gives beforeinstallprompt a chance to fire so Android
      and desktop get the real button rather than the manual instructions. */
+  /* ?resetinstall=1 clears the record so a first run can be tested again
+     without wiping site data. It also explains itself: when the prompt is
+     deliberately suppressed, it says why instead of silently doing nothing. */
   function maybeShowInstallTip(){
-    if(isStandalone) return;
-    if(deviceKind()==="desktop" && !deferredPrompt) return;
-    /* ?resetinstall=1 clears the record, so a first run can be tested again
-       without wiping all the site data for this person. */
-    if(new URLSearchParams(location.search).get("resetinstall")==="1"){
+    const debug = new URLSearchParams(location.search).get("resetinstall")==="1";
+    const explain = (why)=>{
+      if(!debug) return;
+      const b = $("previewBanner");
+      b.textContent = "Install prompt not shown: " + why;
+      b.style.display = "block";
+    };
+
+    if(isStandalone){
+      explain("this portal is already on your home screen. Open portal.carsoncalin.com in Safari to see the walkthrough.");
+      return;
+    }
+    if(deviceKind()==="desktop" && !deferredPrompt){
+      explain("this is a desktop browser with no install option available.");
+      return;
+    }
+    if(debug){
       try{
         localStorage.removeItem(installKey());
         localStorage.removeItem(LEGACY_KEY_PREFIX + (myEmail||"guest").toLowerCase());
@@ -1302,8 +1317,15 @@
     }
     const s = installState();
     const shown = s.shown || 0;
-    if(shown >= MAX_NUDGES) return;
-    if(shown > 0 && (Date.now() - (s.lastShown || 0)) < NUDGE_GAP_MS) return;
+    if(shown >= MAX_NUDGES){
+      explain("it has already been shown twice. Add ?resetinstall=1 to the address to see it again.");
+      return;
+    }
+    if(shown > 0 && (Date.now() - (s.lastShown || 0)) < NUDGE_GAP_MS){
+      const daysLeft = Math.ceil((NUDGE_GAP_MS - (Date.now() - (s.lastShown||0)))/86400000);
+      explain("the first nudge was recent. The next one is about " + daysLeft + " day(s) away.");
+      return;
+    }
     s.shown = shown + 1;
     s.lastShown = Date.now();
     saveInstallState(s);
