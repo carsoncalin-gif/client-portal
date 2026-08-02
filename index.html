@@ -913,11 +913,22 @@
       track.appendChild(step);
     });
 
+    /* headlines mode gets a way in and, once expanded, a way back out */
     if(brief){
       const btn=document.createElement("button");
       btn.type="button"; btn.className="seeall";
       btn.textContent="See all "+total+" steps";
       btn.onclick=()=>{ seeAllSteps=true; renderTrack(c, copy); };
+      track.appendChild(btn);
+    } else if(headlinesMode()){
+      const btn=document.createElement("button");
+      btn.type="button"; btn.className="seeall";
+      btn.textContent="Hide the extra steps";
+      btn.onclick=()=>{
+        seeAllSteps=false;
+        renderTrack(c, copy);
+        track.scrollIntoView({behavior:"smooth", block:"start"});
+      };
       track.appendChild(btn);
     }
   }
@@ -1048,7 +1059,12 @@
   }
 
   function fmtDateParts(d){
-    const dt=new Date(d);
+    /* A plain date like 2026-08-13 is parsed as midnight UTC by JavaScript,
+       which is the evening of the 12th in Indiana, so every date rendered a
+       day early. Build it as local midnight instead. A deadline is a calendar
+       day, not an instant, and it should read the same in any time zone. */
+    const iso=String(d==null?"":d).trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const dt = iso ? new Date(+iso[1], +iso[2]-1, +iso[3]) : new Date(d);
     if(isNaN(dt.getTime())) return null;
     return {m:dt.toLocaleDateString(undefined,{month:"short"}), day:dt.getDate(), t:dt.getTime(),
             long:dt.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"})};
@@ -1066,7 +1082,9 @@
     let best=null;
     (list||[]).forEach(it=>{
       const p=fmtDateParts(it.date);
-      if(p && (p.t-Date.now())>=-43200000 && (!best||p.t<best.p.t)) best={it,p};
+      /* a date counts as coming up for the whole of its own day, not just
+         until midday, now that dates are local midnight */
+      if(p && (p.t-Date.now())>-86400000 && (!best||p.t<best.p.t)) best={it,p};
     });
     if(!best){ el.style.display="none"; return; }
     const cd=countdown(best.p.t);
