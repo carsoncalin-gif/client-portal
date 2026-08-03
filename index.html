@@ -148,6 +148,17 @@
   .step .detail .inner{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
   .step .whatsnext{font-size:12.5px;color:var(--ink-soft);margin-top:10px}
   .step .whatsnext b{color:var(--teal-deep);font-weight:600}
+  /* promises */
+  .promise-head{margin:26px 0 20px}
+  .promise-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:27px;line-height:1.15;margin-bottom:8px}
+  .promise-head p{font-size:15px;color:var(--ink-soft);line-height:1.5;max-width:46ch}
+  .promise{display:flex;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:17px 18px;margin-bottom:11px;box-shadow:var(--shadow)}
+  .promise .tick{flex:none;width:30px;height:30px;border-radius:9px;background:var(--teal-wash);
+    color:var(--teal-deep);display:grid;place-items:center;margin-top:1px}
+  .promise h4{font-family:'Fraunces',serif;font-weight:600;font-size:17px;line-height:1.25;margin-bottom:5px}
+  .promise p{font-size:14px;color:var(--ink-soft);line-height:1.55;white-space:pre-wrap}
+
   /* a note from Carson, pinned under the property card */
   .note-card{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--teal);
     border-radius:16px;padding:16px 18px;margin:0 0 18px;box-shadow:var(--shadow)}
@@ -175,7 +186,8 @@
 
   /* page tabs */
   .tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:5px;margin:16px 0 6px;box-shadow:var(--shadow)}
-  .tab{flex:1;min-height:44px;border:0;background:transparent;font-family:inherit;font-weight:600;font-size:13.5px;color:var(--ink-soft);padding:11px 8px;border-radius:10px;cursor:pointer;transition:.18s}
+  .tab{flex:1;min-height:44px;border:0;background:transparent;font-family:inherit;font-weight:600;font-size:13.5px;color:var(--ink-soft);padding:11px 6px;border-radius:10px;cursor:pointer;transition:.18s;white-space:nowrap}
+  @media(max-width:430px){ .tab{font-size:12px;padding:11px 4px} }
   .tab.active{background:var(--ink);color:#fff}
   .page{animation:fadein .25s ease}
   @keyframes fadein{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
@@ -457,6 +469,7 @@
     <div class="tabs" id="tabs">
       <button type="button" class="tab active" data-page="pageHome">Your Home</button>
       <button type="button" class="tab" data-page="pageMore">Dates &amp; Updates</button>
+      <button type="button" class="tab" data-page="pagePromises" style="display:none">Promises</button>
     </div>
 
     <!-- ============ PAGE 1: YOUR HOME ============ -->
@@ -549,6 +562,15 @@
 
       <div class="section-h">Get in touch</div>
       <div class="actions" id="actions"></div>
+    </div>
+
+    <!-- ============ PAGE 3: PROMISES ============ -->
+    <div id="pagePromises" class="page" style="display:none">
+      <div class="promise-head">
+        <h2>Carson's Promises</h2>
+        <p>What you can count on from me, on every deal, without having to ask.</p>
+      </div>
+      <div id="promiseList"></div>
     </div>
 
     <div class="portal-foot" id="portalFoot" style="display:none">Signed in as <span id="meEmail"></span> &middot; <a href="#" id="footSettings">Portal settings</a> &middot; <a href="#" id="signOutLink">Sign out</a></div>
@@ -1154,15 +1176,47 @@
     $("askBtn").onclick=(e)=>{ e.preventDefault(); openAsk(); };
   }
   function setupTabs(){
-    document.querySelectorAll("#tabs .tab").forEach(btn=>{
+    const tabs=[...document.querySelectorAll("#tabs .tab")];
+    const pages=tabs.map(b=>b.getAttribute("data-page"));   /* derived, so adding a tab needs no edit here */
+    tabs.forEach(btn=>{
       btn.addEventListener("click",()=>{
-        document.querySelectorAll("#tabs .tab").forEach(b=>b.classList.remove("active"));
+        tabs.forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
         const target=btn.getAttribute("data-page");
-        ["pageHome","pageMore"].forEach(p=>{ $(p).style.display = (p===target)?"block":"none"; });
+        pages.forEach(p=>{ $(p).style.display = (p===target)?"block":"none"; });
         window.scrollTo({top:0,behavior:"smooth"});
       });
     });
+  }
+
+  /* ---- promises, shared copy Carson controls from the admin ---- */
+  function renderPromises(list){
+    const wrap=$("promiseList");
+    const tabBtn=document.querySelector('#tabs .tab[data-page="pagePromises"]');
+    wrap.innerHTML="";
+    const items=(list||[]).filter(p=>p && (p.title||p.body));
+    /* No promises written yet means no tab at all. An empty tab promising
+       promises is worse than never mentioning them. */
+    if(!items.length){
+      if(tabBtn) tabBtn.style.display="none";
+      $("pagePromises").style.display="none";
+      return;
+    }
+    if(tabBtn) tabBtn.style.display="";
+    const tick='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    items.forEach(p=>{
+      const el=document.createElement("div"); el.className="promise";
+      el.innerHTML='<span class="tick">'+tick+'</span><div>'
+        + (p.title ? '<h4>'+esc(p.title)+'</h4>' : "")
+        + (p.body ? '<p>'+esc(p.body)+'</p>' : "") + '</div>';
+      wrap.appendChild(el);
+    });
+  }
+  async function loadPromises(sb){
+    try{
+      const { data, error } = await sb.from("site_content").select("value").eq("key","promises").maybeSingle();
+      renderPromises(error ? [] : (data && data.value));
+    }catch(e){ renderPromises([]); }
   }
 
   let myDeals=[];
@@ -1189,6 +1243,7 @@
       $("settingsBtn").style.display="none";
       myDeals=[DEMO]; activeIdx=0;
       allUpdates = SAMPLE_UPDATES;
+      renderPromises([{title:"You will always know what is next",body:"No wondering where things stand."}]);
       renderPortal(DEMO); return;
     }
 
@@ -1281,6 +1336,7 @@
         renderSwitcher(0);
         renderPortal(myDeals[0]);
         loadUpdates(sb);
+        loadPromises(sb);
         const pb=$("previewBanner");
         pb.innerHTML='Previewing as <b>'+esc(pc.client_name||"client")+'</b>. This is exactly what they see. <a href="admin.html" style="color:inherit;font-weight:700">Back to admin</a>';
         pb.style.display="block";
@@ -1314,6 +1370,7 @@
     renderSwitcher(0);
     renderPortal(myDeals[0]);
     loadUpdates(sb);
+    loadPromises(sb);
     $("meEmail").textContent = email;
     $("portalFoot").style.display = "block";
     $("signOutLink").onclick = async (e)=>{ e.preventDefault(); await sb.auth.signOut(); location.reload(); };

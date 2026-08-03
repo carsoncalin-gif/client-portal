@@ -188,6 +188,7 @@
         <div class="subtabs" id="mainTabs">
           <button type="button" class="subtab active" data-tab="clients">Clients</button>
           <button type="button" class="subtab" data-tab="updates">Messages</button>
+          <button type="button" class="subtab" data-tab="promises">Promises</button>
         </div>
 
         <div id="clientsPane">
@@ -232,6 +233,15 @@
           </div>
           <div id="updList"></div>
           <div class="hint" style="margin-top:10px">A message appears pinned at the top of that client's portal, right under their address, and is emailed to both people on the deal. Hide one to take it down without deleting it.</div>
+        </div>
+        <div id="promisesPane" style="display:none">
+          <div class="list-head">
+            <h2>Promises</h2>
+            <button class="btn sm" id="addPromise">+ Add promise</button>
+          </div>
+          <div id="promiseRows"></div>
+          <div class="save-bar"><button class="btn" id="savePromises">Save promises</button></div>
+          <div class="hint" style="margin-top:10px">These appear on the Promises tab in every client's portal. They are the same for everyone, so write what you can stand behind on every deal.</div>
         </div>
       </div>
 
@@ -557,7 +567,52 @@
     document.querySelectorAll("#mainTabs .subtab").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
     $("clientsPane").style.display = tab==="clients" ? "block" : "none";
     $("updatesPane").style.display = tab==="updates" ? "block" : "none";
+    $("promisesPane").style.display = tab==="promises" ? "block" : "none";
     if(tab==="updates" && !updatesLoaded) loadUpdates();
+    if(tab==="promises" && !promisesLoaded) loadPromises();
+  }
+
+  /* ---------- promises, one shared list every client sees ---------- */
+  let promises=[]; let promisesLoaded=false;
+  async function loadPromises(){
+    const { data, error } = await sb.from("site_content").select("value").eq("key","promises").maybeSingle();
+    if(error){ $("promiseRows").innerHTML='<div class="empty">Could not load promises. Has the site_content table been created?</div>'; return; }
+    promises = (data && Array.isArray(data.value)) ? data.value.slice() : [];
+    promisesLoaded=true;
+    if(!promises.length) promises=[{title:"",body:""}];
+    renderPromiseRows();
+  }
+  function renderPromiseRows(){
+    const wrap=$("promiseRows"); wrap.innerHTML="";
+    promises.forEach((p,i)=>{
+      const card=document.createElement("div"); card.className="card";
+      card.innerHTML='<div class="field"><label>Promise '+(i+1)+'</label>'
+        +'<input data-k="title" placeholder="You will always know what is next" value="'+esc(p.title||"")+'"></div>'
+        +'<div class="field"><label>The detail</label>'
+        +'<textarea data-k="body" rows="3" placeholder="A sentence or two in your own words.">'+esc(p.body||"")+'</textarea></div>'
+        +'<div style="display:flex;gap:8px">'
+        +'<button class="btn ghost sm" data-act="up">Move up</button>'
+        +'<button class="btn danger sm" data-act="del">Remove</button></div>';
+      card.querySelectorAll("[data-k]").forEach(el=>el.addEventListener("input",()=>{ promises[i][el.dataset.k]=el.value; }));
+      card.querySelector('[data-act="del"]').onclick=()=>{ promises.splice(i,1); if(!promises.length) promises=[{title:"",body:""}]; renderPromiseRows(); };
+      const up=card.querySelector('[data-act="up"]');
+      if(i===0) up.style.display="none";
+      else up.onclick=()=>{ const t=promises[i-1]; promises[i-1]=promises[i]; promises[i]=t; renderPromiseRows(); };
+      wrap.appendChild(card);
+    });
+  }
+  async function savePromises(){
+    const clean=promises
+      .map(p=>({ title:(p.title||"").trim(), body:(p.body||"").trim() }))
+      .filter(p=>p.title||p.body);
+    $("savePromises").textContent="Saving...";
+    const { error } = await sb.from("site_content")
+      .upsert({ key:"promises", value:clean, updated_at:new Date().toISOString() }, { onConflict:"key" });
+    $("savePromises").textContent="Save promises";
+    if(error){ toast("Save failed: "+error.message); return; }
+    promises = clean.length ? clean : [{title:"",body:""}];
+    renderPromiseRows();
+    toast(clean.length===1 ? "1 promise saved" : clean.length+" promises saved");
   }
   async function loadUpdates(){
     const { data, error } = await sb.from("updates").select("*").order("created_at",{ascending:false});
@@ -692,6 +747,9 @@
     $("updCancel").onclick=closeUpdEditor;
     $("updSave").onclick=saveUpdate;
     $("u_client").onchange=onUpdClientChange;
+    $("addPromise").onclick=()=>{ promises.push({title:"",body:""}); renderPromiseRows();
+      $("promiseRows").lastElementChild.scrollIntoView({behavior:"smooth",block:"center"}); };
+    $("savePromises").onclick=savePromises;
   }
 
   /* ---------- editor ---------- */
