@@ -148,6 +148,23 @@
   .step .detail .inner{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
   .step .whatsnext{font-size:12.5px;color:var(--ink-soft);margin-top:10px}
   .step .whatsnext b{color:var(--teal-deep);font-weight:600}
+  /* commitments, the specific things Carson owes this client */
+  .owed{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--teal);
+    border-radius:16px;padding:16px 18px;margin:0 0 18px;box-shadow:var(--shadow)}
+  .owed .from{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+  .owed .from .av{flex:none;width:26px;height:26px;border-radius:8px;background:var(--teal);color:#04282c;
+    display:grid;place-items:center;font-family:'Fraunces',serif;font-weight:700;font-size:13px}
+  .owed .from .who{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+  .citem{display:flex;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+  .citem:first-of-type{border-top:0;padding-top:0}
+  .citem .mark{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);margin-top:1px}
+  .citem.kept .mark{border-color:var(--green);background:var(--green);color:#fff;display:grid;place-items:center}
+  .citem .txt{flex:1}
+  .citem .txt b{display:block;font-size:14.5px;font-weight:600;line-height:1.35}
+  .citem.kept .txt b{color:var(--ink-soft)}
+  .citem .when{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:3px}
+  .citem .when.late{color:#c0492f;font-weight:600}
+
   /* promises */
   .promise-head{margin:26px 0 20px}
   .promise-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:27px;line-height:1.15;margin-bottom:8px}
@@ -502,6 +519,7 @@
       </div>
 
       <div class="note-card" id="pinnedNote" style="display:none"></div>
+      <div class="owed" id="owedCard" style="display:none"></div>
 
       <a id="listingBtn" class="listing-btn" href="#" target="_blank" rel="noopener" style="display:none">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7" /><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10" /></svg>
@@ -568,9 +586,20 @@
     <div id="pagePromises" class="page" style="display:none">
       <div class="promise-head">
         <h2>Carson's Promises</h2>
-        <p>What you can count on from me, on every deal, without having to ask.</p>
+        <p>What I have promised you specifically, and what you can count on from me on every deal.</p>
       </div>
-      <div id="promiseList"></div>
+      <div id="commitOpenWrap" style="display:none">
+        <div class="section-h">Promised to you</div>
+        <div class="owed" id="commitOpen"></div>
+      </div>
+      <div id="commitKeptWrap" style="display:none">
+        <div class="section-h">Already done</div>
+        <div class="owed" id="commitKept"></div>
+      </div>
+      <div id="promiseListWrap" style="display:none">
+        <div class="section-h">How I work</div>
+        <div id="promiseList"></div>
+      </div>
     </div>
 
     <div class="portal-foot" id="portalFoot" style="display:none">Signed in as <span id="meEmail"></span> &middot; <a href="#" id="footSettings">Portal settings</a> &middot; <a href="#" id="signOutLink">Sign out</a></div>
@@ -1015,6 +1044,7 @@
       renderTrack(c, copy);
     }
     $("greet").style.display = c.phase==="closed" ? "none" : "block";
+    renderCommitments(c);
     refreshUpdatesUI(c);
     renderDates(c.key_dates);
     renderDocs(c.documents);
@@ -1190,19 +1220,73 @@
   }
 
   /* ---- promises, shared copy Carson controls from the admin ---- */
+  /* ---- commitments: the specific things Carson owes this client ----
+     Keith noticed a promise that slipped, which is what this exists to stop.
+     Open ones sit on the home tab where both of them see it every visit.
+     Kept ones stay forever, because the record of what was actually done is
+     worth more than any general statement. */
+  let myCommitments=[];
+
+  function commitmentsFor(c){
+    if(!c) return [];
+    return myCommitments.filter(x=>x.client_id===c.id);
+  }
+  function commitRow(x, kept){
+    const p = x.due ? fmtDateParts(x.due) : null;
+    let when="";
+    if(kept && x.done_at){
+      const d=new Date(x.done_at);
+      when='<span class="when">Done '+esc(d.toLocaleDateString(undefined,{month:"long",day:"numeric"}))+'</span>';
+    } else if(p){
+      const late = (p.t - Date.now()) < -86400000;
+      when='<span class="when'+(late?" late":"")+'">'+(late?"Was due ":"By ")+esc(p.long)+'</span>';
+    }
+    const tick='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    return '<div class="citem'+(kept?" kept":"")+'"><span class="mark">'+(kept?tick:"")+'</span>'
+      + '<span class="txt"><b>'+esc(x.what)+'</b>'+when+'</span></div>';
+  }
+  function renderCommitments(c){
+    const open=commitmentsFor(c).filter(x=>!x.done_at);
+    const kept=commitmentsFor(c).filter(x=>x.done_at);
+
+    const card=$("owedCard");
+    if(open.length){
+      card.innerHTML='<div class="from"><span class="av">C</span><span class="who">What I owe you</span></div>'
+        + open.map(x=>commitRow(x,false)).join("");
+      card.style.display="block";
+    } else { card.style.display="none"; }
+
+    $("commitOpenWrap").style.display = open.length ? "block" : "none";
+    if(open.length) $("commitOpen").innerHTML = open.map(x=>commitRow(x,false)).join("");
+    $("commitKeptWrap").style.display = kept.length ? "block" : "none";
+    if(kept.length) $("commitKept").innerHTML = kept.map(x=>commitRow(x,true)).join("");
+    syncPromisesTab();
+  }
+  async function loadCommitments(sb){
+    try{
+      const { data, error } = await sb.from("commitments").select("*").order("created_at",{ascending:true});
+      myCommitments = (error||!data) ? [] : data;
+    }catch(e){ myCommitments=[]; }
+    renderCommitments(myDeals[activeIdx]);
+  }
+
+  /* the tab earns its place if there is anything at all to show on it */
+  let promiseItems=[];
+  function syncPromisesTab(){
+    const tabBtn=document.querySelector('#tabs .tab[data-page="pagePromises"]');
+    const c=myDeals[activeIdx];
+    const has = promiseItems.length>0 || commitmentsFor(c).length>0;
+    if(tabBtn) tabBtn.style.display = has ? "" : "none";
+    if(!has) $("pagePromises").style.display="none";
+  }
+
   function renderPromises(list){
     const wrap=$("promiseList");
-    const tabBtn=document.querySelector('#tabs .tab[data-page="pagePromises"]');
     wrap.innerHTML="";
     const items=(list||[]).filter(p=>p && (p.title||p.body));
-    /* No promises written yet means no tab at all. An empty tab promising
-       promises is worse than never mentioning them. */
-    if(!items.length){
-      if(tabBtn) tabBtn.style.display="none";
-      $("pagePromises").style.display="none";
-      return;
-    }
-    if(tabBtn) tabBtn.style.display="";
+    promiseItems=items;
+    $("promiseListWrap").style.display = items.length ? "block" : "none";
+    if(!items.length){ syncPromisesTab(); return; }
     const tick='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
     items.forEach(p=>{
       const el=document.createElement("div"); el.className="promise";
@@ -1337,6 +1421,7 @@
         renderPortal(myDeals[0]);
         loadUpdates(sb);
         loadPromises(sb);
+        loadCommitments(sb);
         const pb=$("previewBanner");
         pb.innerHTML='Previewing as <b>'+esc(pc.client_name||"client")+'</b>. This is exactly what they see. <a href="admin.html" style="color:inherit;font-weight:700">Back to admin</a>';
         pb.style.display="block";
@@ -1371,6 +1456,7 @@
     renderPortal(myDeals[0]);
     loadUpdates(sb);
     loadPromises(sb);
+    loadCommitments(sb);
     $("meEmail").textContent = email;
     $("portalFoot").style.display = "block";
     $("signOutLink").onclick = async (e)=>{ e.preventDefault(); await sb.auth.signOut(); location.reload(); };
