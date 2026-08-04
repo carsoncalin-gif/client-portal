@@ -739,6 +739,51 @@
       keyOwn:"Your net proceeds",
       ctaHead:"Thinking about your next move?",
       ctaSub:"Whenever you are ready, I will map out the numbers."
+    },
+    build:{
+      defaultStatus:"Under construction",
+      sub:"Here is exactly where your build stands and what is coming next. Building takes time, so I will keep this current as each stage finishes.",
+      steps:[
+        {t:"Plans and lot",d:"Your lot is chosen and your floor plan is locked in.",
+          prep:["We walk the lot together and look at orientation, grade, and what backs up to it","Confirm the floor plan and elevation before anything is signed","Ask what the base price actually includes, and what the lot premium covers"],
+          did:["We chose your lot and confirmed the plan and elevation","We went through what the base price includes and what it does not"]},
+        {t:"Builder contract",d:"Agreement signed with the builder and your deposit is in.",
+          prep:["Builder contracts are written to protect the builder, so we read it together before you sign","Deposits here are usually larger than normal earnest money and often not refundable","We get the estimated completion window in writing"],
+          did:["Your contract is signed and your deposit is in","We got the completion window in writing"]},
+        {t:"Design selections",d:"Finishes, fixtures, and upgrades chosen at the design center.",
+          prep:["Selections move quickly, so go in already knowing your upgrade budget","Structural choices have to be decided first and cannot be added later","Anything you can add yourself after closing is usually cheaper than the builder upgrade"],
+          did:["Your selections are locked in","We kept the upgrades to the ones that are hard to change later"]},
+        {t:"Permits and pre construction",d:"Permits are pulled and the pre construction meeting is done.",
+          prep:["Permits can take weeks depending on the municipality, and nothing moves until they clear","You get a pre construction meeting with your site supervisor, go to it","Take a photo of the empty lot before they break ground, you will want it later"],
+          did:["Permits are approved and the pre construction meeting is done","You have met your site supervisor"]},
+        {t:"Foundation",d:"The site is prepped and your foundation goes in.",
+          prep:["Weather drives this stage more than anything else","Visit once the forms are set, it is the first time the footprint feels real","Delays here are normal and usually do not move your closing date"],
+          did:["The site is prepped and your foundation is in","Your home has a footprint on the ground"]},
+        {t:"Framing",d:"Walls go up and the roof goes on.",
+          prep:["This is the fastest visible progress of the whole build, often a week or two","Walk it once framing is up. Rooms always feel smaller at this stage, that is normal","If anything looks different from your plan, we raise it now rather than later"],
+          did:["Framing is complete and the roof is on","We walked it and confirmed the layout matches your plan"]},
+        {t:"Rough ins",d:"Plumbing, electrical, and heating go in before the walls close up.",
+          prep:["This is your last chance to add outlets, switches, or wiring anywhere in the house","Photograph every wall before drywall so you know what is behind them for the next twenty years","Check outlet and light placement against how you actually live, not how the plan looks"],
+          did:["Plumbing, electrical, and heating are in and inspected","We photographed the walls before they closed up"]},
+        {t:"Drywall and finishes",d:"Drywall, cabinets, flooring, paint, and fixtures go in.",
+          prep:["From here it starts looking like a home very quickly","Selections you made months ago start showing up, so check them against your order","Keep a running list of anything that looks off, we will use it at the walkthrough"],
+          did:["Drywall, cabinets, flooring, and paint are complete","Your selections are installed"]},
+        {t:"Walkthrough and punch list",d:"We walk the finished home and list everything that needs putting right.",
+          prep:["Bring painter's tape and mark everything, nothing is too small to flag","Test every outlet, faucet, window, and door yourself","Get the punch list in writing, with dates, before you close"],
+          did:["We walked the home together and documented every item","The builder has your punch list in writing"]},
+        {t:"Closing and keys",d:"You close, the home is yours, and your warranty begins.",
+          prep:["Bring a valid photo ID","Wire your funds ahead of time, never on the day, and call me to confirm the instructions","Your builder warranty starts at closing, so keep every document they hand you"],
+          did:["You closed and the home is yours","Your warranty period has started"]}
+      ],
+      celebHead:"Finally, it is yours.",
+      celebSub:"Months of decisions, and here it is. Here is a simple look at where you stand today. I will refresh this from time to time so you always know your position.",
+      equityHeader:"Your equity snapshot",
+      statLabels:["Purchase price","Deposits and down payment","Original loan","Estimated equity today"],
+      barLeftLbl:"Estimated home value",
+      keyLoan:"Loan balance",
+      keyOwn:"Your equity",
+      ctaHead:"Curious what your home is worth?",
+      ctaSub:"Tap anytime for a fresh, no pressure estimate."
     }
   };
 
@@ -768,7 +813,9 @@
   ];
   function copyFor(c){
     const base = COPY[c.role] || COPY.buyer;
-    if(c.role!=="seller" && c.financing==="cash"){
+    /* only a resale buyer gets the shortened cash roadmap. A cash build still
+       goes through every construction stage. */
+    if(c.role==="buyer" && c.financing==="cash"){
       return Object.assign({}, base, {
         steps:CASH_STEPS,
         statLabels:["Purchase price","Cash invested","Closing costs","Estimated equity today"],
@@ -1020,9 +1067,10 @@
     $("greetHead").textContent = hello+", "+nameFor(c)+".";
     $("greetSub").textContent = copy.sub;
     $("dealStatus").textContent = c.status_label || copy.defaultStatus;
-    const searching = c.role!=="seller" && !c.property_address;
-    $("propAddr").textContent = c.property_address || (searching ? "Still searching for your home" : "");
-    $("propMeta").textContent = c.property_meta || (searching ? "We'll drop the home in here the moment you're under contract." : "");
+    const searching = c.role==="buyer" && !c.property_address;
+    const building = c.role==="build" && !c.property_address;
+    $("propAddr").textContent = c.property_address || (searching ? "Still searching for your home" : building ? "Your new home" : "");
+    $("propMeta").textContent = c.property_meta || (searching ? "We'll drop the home in here the moment you're under contract." : building ? "Your address will appear here once the lot is recorded." : "");
     const priceText = c.property_price || (searching ? "TBD" : "");
     $("propPrice").textContent = (showNums || !priceText) ? priceText : DOTS;
     $("propPriceLbl").textContent = c.price_label || (searching ? "Target" : "");
@@ -1311,7 +1359,7 @@
     sw.innerHTML="";
     myDeals.forEach((d,i)=>{
       const b=document.createElement("button"); if(i===idx) b.className="active";
-      const verb = d.role==="seller" ? "Selling" : "Buying";
+      const verb = d.role==="seller" ? "Selling" : d.role==="build" ? "Building" : "Buying";
       const addr = d.property_address || (d.role==="seller" ? "Your sale" : "Still searching");
       b.textContent = verb+" · "+addr;
       b.onclick=()=>{ activeIdx=i; seeAllSteps=false; renderSwitcher(i); renderPortal(d); window.scrollTo({top:0,behavior:"smooth"}); };

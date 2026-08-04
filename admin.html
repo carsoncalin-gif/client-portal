@@ -278,14 +278,14 @@
           <div class="field"><label>Sign-in email</label><input id="f_email" type="email" placeholder="client@email.com"><div class="hint">The email they log in with. Each client only sees their own portal.</div></div>
           <div class="field"><label>Partner email (optional)</label><input id="f_email2" type="email" placeholder="spouse@email.com"><div class="hint">For couples. Both people can log in and see this same portal.</div></div>
           <div class="row2">
-            <div class="field"><label>Side</label><select id="f_role"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="both">Buyer + Seller</option></select></div>
+            <div class="field"><label>Side</label><select id="f_role"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="build">Building new construction</option><option value="both">Buyer + Seller</option></select></div>
             <div class="field"><label>Status pill</label><input id="f_status" placeholder="Under contract"></div>
           </div>
           <div class="row2">
             <div class="field"><label>Stage (happening now)</label><select id="f_stage"></select></div>
             <div class="field"><label>Deal phase</label><select id="f_phase"><option value="active">Active</option><option value="closed">Closed</option></select></div>
           </div>
-          <div class="field" id="financingField"><label>Financing</label><select id="f_financing"><option value="financed">Financed (loan)</option><option value="cash">Cash</option></select><div class="hint">Cash buyers get a shorter roadmap, no appraisal or loan steps.</div></div>
+          <div class="field" id="financingField"><label>Financing</label><select id="f_financing"><option value="financed">Financed (loan)</option><option value="cash">Cash</option></select><div class="hint">Cash resale buyers get a shorter roadmap, no appraisal or loan steps. A build keeps every stage either way.</div></div>
         </div>
 
         <div class="card">
@@ -407,14 +407,18 @@
   const BUYER_STAGES=["Game plan and approval","Touring and offers","Offer accepted","Inspection","Appraisal","Loan approval","Final walkthrough","Closing day"];
   const CASH_STAGES=["Game plan and budget","Touring and offers","Offer accepted","Inspection","Title and closing prep","Final walkthrough","Closing day"];
   const SELLER_STAGES=["Listing prep","Live on market","Showings and offers","Offer accepted","Inspection review and response","Appraisal","Buyer financing","Closing day"];
+  const BUILD_STAGES=["Plans and lot","Builder contract","Design selections","Permits and pre construction","Foundation","Framing","Rough ins","Drywall and finishes","Walkthrough and punch list","Closing and keys"];
   function stagesFor(role, financing){
     if(role==="seller") return SELLER_STAGES;
+    if(role==="build") return BUILD_STAGES;
+    /* only a resale buyer gets the shortened cash roadmap */
     return financing==="cash" ? CASH_STAGES : BUYER_STAGES;
   }
   const CLOSE_LABELS={
     buyer:{c1:"Purchase price",c2:"Down payment",c3:"Original loan",cnet:"Equity today",bar:"Estimated home value"},
     cash:{c1:"Purchase price",c2:"Cash invested",c3:"Closing costs",cnet:"Equity today",bar:"Estimated home value"},
-    seller:{c1:"Final sale price",c2:"Loan payoff",c3:"Selling costs",cnet:"Net to you",bar:"Final sale price"}
+    seller:{c1:"Final sale price",c2:"Loan payoff",c3:"Selling costs",cnet:"Net to you",bar:"Final sale price"},
+    build:{c1:"Purchase price",c2:"Deposits and down payment",c3:"Original loan",cnet:"Equity today",bar:"Estimated home value"}
   };
 
   const $ = id => document.getElementById(id);
@@ -895,7 +899,10 @@
     $("f_stage").value=Math.max(0,Math.min(idx||0,arr.length-1));
   }
   function applyCloseLabels(role, financing){
-    const L=CLOSE_LABELS[role==="seller"?"seller":(financing==="cash"?"cash":"buyer")];
+    const key = role==="seller" ? "seller"
+              : role==="build" ? "build"
+              : (financing==="cash" ? "cash" : "buyer");
+    const L=CLOSE_LABELS[key];
     $("lbl_c1").textContent=L.c1; $("lbl_c2").textContent=L.c2; $("lbl_c3").textContent=L.c3; $("lbl_cnet").textContent=L.cnet; $("lbl_bar").textContent=L.bar;
   }
   function rowSet(container, fields, items){
@@ -1089,7 +1096,7 @@
     const name=$("f_name").value.trim()||"there";
     const email=(toEmail||"").trim();
     const role=$("f_role").value;
-    const noun = role==="seller" ? "home sale" : role==="both" ? "move" : "home purchase";
+    const noun = role==="seller" ? "home sale" : role==="build" ? "new home build" : role==="both" ? "move" : "home purchase";
     return "Hi "+name+"! I set up Carson's Concierge for you, a private portal where you can follow your "+noun+" every step of the way. Where things stand, what is next, photos, key dates, and your documents, all in one place.\n\n"+PORTAL_LABEL+"\n\nEnter your email"+(email?" ("+email+")":"")+" and you'll get a secure 6-digit code to sign in. No password to remember.\n\nOne tip, open the link in Safari rather than another browser. It will then show you how to save it to your home screen so it sits there like an app and keeps you signed in.\n\nCarson";
   }
   function closeInvitePick(){
