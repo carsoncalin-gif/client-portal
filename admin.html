@@ -55,7 +55,10 @@
   .client-card:hover{border-color:var(--teal)}
   .client-card .av{flex:none;width:44px;height:44px;border-radius:12px;background:var(--teal-wash);display:grid;place-items:center;font-family:'Fraunces',serif;font-weight:600;color:var(--teal-deep);font-size:18px}
   .client-card .who b{font-size:15.5px;font-weight:600;display:block}
+  .client-card .who{min-width:0}
   .client-card .who span{font-size:12.5px;color:var(--ink-soft)}
+  .client-card .who .seen{display:block;font-size:12px;margin-top:3px;color:var(--ink-soft)}
+  .client-card .who .seen .never{color:var(--red);font-weight:600}
   .client-card .badge{margin-left:auto;flex:none;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:5px 10px;border-radius:999px;background:var(--teal-wash);color:var(--teal-deep)}
   .client-card .badge.closed{background:#eaf6ef;color:var(--green)}
   .client-card .adv{flex:none;width:44px;height:44px;border-radius:11px;border:1px solid var(--line);background:var(--card);color:var(--teal-deep);font-size:17px;font-weight:700;margin-left:8px;cursor:pointer}
@@ -476,6 +479,23 @@
   /* ---------- list ---------- */
   let clients=[];
   let lastSeen={};
+  let lastSeenByEmail={};
+  /* a short label per person, since client_name is shared across both of them */
+  function personLabel(email){
+    const p=prefsByEmail[(email||"").trim().toLowerCase()];
+    if(p && p.display_name) return p.display_name;
+    let local=(email||"").split("@")[0].replace(/[._-]+/g," ").trim();
+    local = local.charAt(0).toUpperCase()+local.slice(1);
+    return local.length>14 ? local.slice(0,13)+"…" : local;
+  }
+  function seenSummary(c){
+    const out=[];
+    [c.email, c.email2].filter(Boolean).forEach(em=>{
+      const when=lastSeenByEmail[(em||"").trim().toLowerCase()];
+      out.push({ who:personLabel(em), when:when?ago(when):null });
+    });
+    return out;
+  }
   function ago(ts){ if(!ts) return ""; const s=(Date.now()-new Date(ts).getTime())/1000; if(s<60) return "just now"; if(s<3600) return Math.floor(s/60)+"m ago"; if(s<86400) return Math.floor(s/3600)+"h ago"; const d=Math.floor(s/86400); if(d<7) return d+"d ago"; return new Date(ts).toLocaleDateString(); }
   /* what each person chose on their own portal, keyed by lowercased email */
   let prefsByEmail={};
@@ -494,6 +514,11 @@
     const p=prefsByEmail[e];
     const theirs = !!(p && p.set_by_client);
     const level = p ? p.detail_level : "everything";
+
+    const seenAt=lastSeenByEmail[e];
+    const seenLine = seenAt
+      ? '<span style="color:var(--ink-soft)">Last opened '+esc(ago(seenAt))+'</span>'
+      : '<span style="color:var(--red);font-weight:600">Has not opened it yet</span>';
 
     let status;
     if(theirs){
@@ -514,7 +539,8 @@
       + '<button type="button" data-v="everything"'+(level!=="headlines"?' class="on"':'')+'>Everything</button>'
       + '</div>';
 
-    return '<div style="margin-bottom:14px"><b style="font-weight:600">'+esc(email)+'</b><br>'+status+seg+'</div>';
+    return '<div style="margin-bottom:14px"><b style="font-weight:600">'+esc(email)+'</b><br>'
+      + seenLine + '<br>' + status + seg + '</div>';
   }
   function renderPrefsView(){
     const html=prefLine($("f_email").value)+prefLine($("f_email2").value);
@@ -538,10 +564,17 @@
     clients=data||[];
     await loadPrefs();
     await loadCommitments();
-    lastSeen={};
+    lastSeen={}; lastSeenByEmail={};
     try{
-      const { data:vs } = await sb.from("visits").select("client_id,seen_at").order("seen_at",{ascending:false}).limit(500);
-      (vs||[]).forEach(v=>{ if(v.client_id && !lastSeen[v.client_id]) lastSeen[v.client_id]=v.seen_at; });
+      /* visits already records who opened it, not just which deal, so per
+         person history needs no new table. Newest first, so the first hit
+         for each key is the most recent. */
+      const { data:vs } = await sb.from("visits").select("client_id,email,seen_at").order("seen_at",{ascending:false}).limit(2000);
+      (vs||[]).forEach(v=>{
+        if(v.client_id && !lastSeen[v.client_id]) lastSeen[v.client_id]=v.seen_at;
+        const e=(v.email||"").trim().toLowerCase();
+        if(e && !lastSeenByEmail[e]) lastSeenByEmail[e]=v.seen_at;
+      });
     }catch(e){}
     renderList();
   }
@@ -569,14 +602,18 @@
       const card=document.createElement("div"); card.className="client-card";
       const initial=(c.client_name||"?").trim().charAt(0).toUpperCase();
       const badge = c.phase==="closed" ? '<span class="badge closed">Closed</span>' : '<span class="badge">'+(c.role||"buyer")+'</span>';
-      const ls = ago(lastSeen[c.id]);
-      const sub = esc(stageName(c)) + ' · ' + esc(c.status_label||"") + (ls? ' · seen '+ls : '');
+      const sub = esc(stageName(c)) + (c.status_label ? ' · '+esc(c.status_label) : '');
+      /* who has actually opened it, per person, so a silent invite is obvious */
+      const seen = seenSummary(c).map(s=>s.when
+        ? '<span>'+esc(s.who)+' '+esc(s.when)+'</span>'
+        : '<span class="never">'+esc(s.who)+' has not opened it</span>').join(' · ');
       const arr=stagesFor(c.role, c.financing);
       const canAdv = c.phase!=="closed" && (c.current_index||0) < arr.length-1;
       const eye='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
       const prev='<button class="adv pv" title="Preview their portal">'+eye+'</button>';
       const adv = canAdv ? '<button class="adv ad" title="Advance to next stage">&rarr;</button>' : '';
-      card.innerHTML='<div class="av">'+initial+'</div><div class="who"><b>'+esc(c.client_name||"(no name)")+'</b><span>'+sub+'</span></div>'+badge+prev+adv;
+      card.innerHTML='<div class="av">'+initial+'</div><div class="who"><b>'+esc(c.client_name||"(no name)")+'</b><span>'+sub+'</span>'
+        +(seen?'<span class="seen">'+seen+'</span>':'')+'</div>'+badge+prev+adv;
       card.onclick=()=>openEditor(c);
       const pb=card.querySelector(".pv");
       if(pb) pb.onclick=(e)=>{ e.stopPropagation(); window.open(PREVIEW_BASE+"?preview="+c.id, "_blank"); };
