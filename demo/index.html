@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your Portal, a preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b2426; --paper:#f5f1ea; --teal:#0e9fb0; --tealdeep:#0a7a87;
+  --gold:#c98a2b; --green:#2f9e6f; --red:#c0492f;
+  --line:rgba(27,36,38,.10); --soft:rgba(27,36,38,.55);
+  --card:#fffdf9;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Hanken Grotesk",system-ui,sans-serif; font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.fr{font-family:Fraunces,Georgia,serif; font-weight:600; letter-spacing:-.01em}
+.wrap{max-width:520px;margin:0 auto;padding:0 20px 64px}
+
+/* preview banner */
+.banner{background:var(--ink);color:var(--paper);padding:14px 20px;text-align:center}
+.banner .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:700}
+.banner .t{font-size:14px;margin-top:3px;color:rgba(245,241,234,.82)}
+
+/* toggle */
+.toggle{display:flex;gap:6px;background:rgba(27,36,38,.06);padding:5px;border-radius:999px;margin:22px 0 26px}
+.toggle button{
+  flex:1;border:0;background:transparent;padding:11px 8px;border-radius:999px;cursor:pointer;
+  font-family:"Hanken Grotesk",sans-serif;font-size:14px;font-weight:600;color:var(--soft);transition:.18s;
+}
+.toggle button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(27,36,38,.12)}
+
+/* header */
+.hello{font-size:13px;color:var(--soft);margin-bottom:2px}
+.name{font-size:27px;line-height:1.15;margin:0 0 18px}
+
+/* property */
+.photo{
+  height:186px;border-radius:16px;margin-bottom:14px;position:relative;overflow:hidden;
+  background:linear-gradient(140deg,#c8d6d4,#9fb8b6 55%,#8aa8a8);
+  display:flex;align-items:flex-end;padding:14px;
+}
+.photo:after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(27,36,38,.42),transparent 58%)}
+.photo .tag{
+  position:relative;z-index:1;background:rgba(255,253,249,.94);color:var(--ink);
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:6px 11px;border-radius:999px;
+}
+.addr{font-size:20px;margin:0 0 3px}
+.meta{font-size:14px;color:var(--soft)}
+.price{font-size:24px;font-family:Fraunces,serif;font-weight:600;margin-top:9px}
+.pricelab{font-size:12px;color:var(--soft);text-transform:uppercase;letter-spacing:.1em}
+
+/* sections */
+.sec{margin-top:34px}
+.sechead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
+.sectitle{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--tealdeep)}
+.why{font-size:13px;color:var(--soft);font-style:italic;margin:0 0 14px;line-height:1.45}
+
+/* roadmap */
+.step{display:flex;gap:13px;padding:13px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.step:last-child{border-bottom:0}
+.dot{
+  width:22px;height:22px;border-radius:50%;flex:0 0 22px;margin-top:1px;
+  border:2px solid var(--line);display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:var(--soft);background:var(--card);
+}
+.done .dot{background:var(--green);border-color:var(--green);color:#fff}
+.now .dot{background:var(--teal);border-color:var(--teal);color:#fff;box-shadow:0 0 0 4px rgba(14,159,176,.16)}
+.step .lab{font-weight:600;font-size:15px}
+.now .lab{color:var(--tealdeep)}
+.step .sub{font-size:13px;color:var(--soft);margin-top:1px}
+.detail{display:none;font-size:14px;color:var(--soft);padding:10px 0 2px 35px;line-height:1.55}
+.step.open + .detail{display:block}
+.chev{margin-left:auto;color:var(--soft);font-size:13px;align-self:center}
+
+/* dates */
+.date{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.date:last-child{border-bottom:0}
+.dlab{font-weight:600;font-size:15px}
+.dsub{font-size:13px;color:var(--soft)}
+.count{font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap;
+  background:rgba(14,159,176,.12);color:var(--tealdeep)}
+.count.soon{background:rgba(201,138,43,.16);color:#8a5d18}
+.count.today{background:rgba(192,73,47,.14);color:var(--red)}
+
+/* updates */
+.upd{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:11px}
+.upd h4{margin:0 0 5px;font-size:15px;font-family:Fraunces,serif;font-weight:600}
+.upd p{margin:0;font-size:14px;color:var(--soft);line-height:1.5}
+.when{font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.08em;margin-top:9px}
+
+/* docs */
+.doc{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.doc:last-child{border-bottom:0}
+.docicon{width:34px;height:34px;border-radius:9px;background:rgba(14,159,176,.11);color:var(--tealdeep);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:0 0 34px}
+.docname{font-weight:600;font-size:15px}
+.docsub{font-size:12px;color:var(--soft)}
+
+/* actions */
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.act{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 13px;text-align:center}
+.act .ic{font-size:19px}
+.act .al{font-size:13px;font-weight:600;margin-top:5px}
+
+/* equity peek */
+.eq{background:var(--ink);color:var(--paper);border-radius:16px;padding:19px}
+.eq .lab{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--teal);font-weight:700}
+.eq .big{font-family:Fraunces,serif;font-size:31px;font-weight:600;margin:7px 0 4px}
+.eq .note{font-size:13px;color:rgba(245,241,234,.66);line-height:1.5}
+.bar{height:9px;border-radius:999px;background:rgba(245,241,234,.16);margin:15px 0 8px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.bar .own{background:var(--green)}
+.bar .loan{background:rgba(245,241,234,.28)}
+.legend{display:flex;gap:16px;font-size:12px;color:rgba(245,241,234,.66)}
+.legend b{color:var(--paper);font-weight:600}
+
+.foot{margin-top:40px;padding-top:22px;border-top:1px solid var(--line);text-align:center}
+.foot .fr{font-size:17px}
+.foot p{font-size:13px;color:var(--soft);margin:6px 0 0}
+.hide{display:none}
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <div class="k">Preview</div>
+  <div class="t">Sample client. This is what yours looks like.</div>
+</div>
+
+<div class="wrap">
+
+  <div class="toggle">
+    <button id="bBuy" class="on" onclick="show('buy')">Buying</button>
+    <button id="bSell" onclick="show('sell')">Selling</button>
+  </div>
+
+  <!-- ============================== BUY ============================== -->
+  <div id="buy">
+    <div class="hello">Good morning,</div>
+    <h1 class="name">Alex and Jordan</h1>
+
+    <div class="photo"><span class="tag">Under contract</span></div>
+    <h2 class="addr">123 Apple Street</h2>
+    <div class="meta">Fishers, IN 46037 · 4 bed · 2.5 bath · 2,410 sq ft</div>
+    <div class="price">$415,000</div>
+    <div class="pricelab">Purchase price</div>
+
+    <div class="sec">
+      <div class="sechead"><span class="sectitle">Where you are</span></div>
+      <p class="why">Tap any step to see exactly what happens and what you need to have ready.</p>
+
+      <div class="step done" onclick="tog(this)"><div class="dot">&#10003;</div><div><div class="lab">Getting set up</div><div class="sub">Done July 12</div></div></div>
+      <div class="detail">We talked through your timeline, your must haves, and what you want to avoid. You signed the agreement so I can represent you.</div>
+
+      <div class="step done" onclick="tog(this)"><div class="dot">&#10003;</div><div><div class="lab">Pre approval</div><div class="sub">Done July 15</div></div></div>
+      <div class="detail">Your lender confirmed your number in writing. This is what lets us write a serious offer instead of a hopeful one.</div>
+
+      <div class="step done" onclick="tog(this)"><div class="dot">&#10003;</div><div><div class="lab">Touring homes</div><div class="sub">7 homes, 3 weekends</div></div></div>
+      <div class="detail">We toured, compared, and narrowed. Notes from every showing stay here so you are not trying to remember which house had the odd basement.</div>
+
+      <div class="step now" onclick="tog(this)"><div class="dot">3</div><div><div class="lab">Offer accepted</div><div class="sub">You are here</div></div><span class="chev">&#9662;</span></div>
+      <div class="detail"><b>What I am doing:</b> earnest money to title, your lender has the contract, inspection is being scheduled.<br><br><b>What I need from you:</b> nothing today. I will text you the moment the inspector confirms a time.</div>
+
+      <div class="step" onclick="tog(this)"><div class="dot">4</div><div><div class="lab">Inspection</div><div class="sub">Next up</div></div></div>
+      <div class="detail">You get the full report. We go through it together, separate the real problems from the noise, and I get contractor quotes before we ask the seller for anything.</div>
+
+      <div class="step" onclick="tog(this)"><div class="dot">5</div><div><div class="lab">Appraisal and loan</div><div class="sub">Roughly 3 weeks out</div></div></div>
+      <div class="detail">The lender orders the appraisal. If it comes in low I will tell you the same day and walk you through your options before anyone panics.</div>
+
+      <div class="step" onclick="tog(this)"><div class="dot">6</div><div><div class="lab">Clear to close</div><div class="sub">Final walkthrough, then keys</div></div></div>
+      <div class="detail">You get the settlement statement to review before closing day, not at the table. We walk the home one last time, then you sign.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sechead"><span class="sectitle">Your dates</span></div>
+      <p class="why">Every deadline that matters, counting down. You never have to ask what is next.</p>
+      <div class="date"><div><div class="dlab">Inspection</div><div class="dsub">9:00am, inspector meets us there</div></div><span class="count today">Tomorrow</span></div>
+      <div class="date"><div><div class="dlab">Inspection response due</div><div class="dsub">We decide together before this</div></div><span class="count soon">In 6 days</span></div>
+      <div class="date"><div><div class="dlab">Appraisal ordered</div><div class="dsub">Lender handles, I follow up</div></div><span class="count">In 11 days</span></div>
+      <div class="date"><div><div class="dlab">Closing</div><div class="dsub">Enterprise Title, 2:00pm</div></div><span class="count">In 34 days</span></div>
+    </div>
+
+    <div class="sec">
+      <div class="sechead"><span class="sectitle">Updates</span></div>
+      <p class="why">Short notes from me as things happen, so nothing lives only in a text thread.</p>
+      <div class="upd"><h4>Inspection is booked</h4><p>Tomorrow at 9. Plan on about two and a half hours. Come for the last thirty minutes if you want the walkthrough, I will be there the whole time either way.</p><div class="when">2 hours ago</div></div>
+      <div class="upd"><h4>Earnest money received</h4><p>Title confirmed your $3,000 landed this morning. Receipt is in your documents.</p><div class="when">Yesterday</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sechead"><span class="sectitle">Documents</span></div>
+      <p class="why">Everything you have signed, in one place, forever. No digging through email.</p>
+      <div class="doc"><div class="docicon">PDF</div><div><div class="docname">Purchase agreement</div><div class="docsub">Signed July 28</div></div></div>
+      <div class="doc"><div class="docicon">PDF</div><div><div class="docname">Earnest money receipt</div><div class="docsub">Added yesterday</div></div></div>
+      <div class="doc"><div class="docicon">PDF</div><div><div class="docname">Pre approval letter</div><div class="docsub">Signed July 15</div></div></div>
+    </div>
+  </div>
+
+  <!-- ============================== SELL ============================== -->
+  <div id="sell" class="hide">
+    <div class="hello">Good morning,</div>
+    <h1 class="name">Sam and Riley</h1>
+
+    <div class="photo"><span class="tag">Live on market</span></div>
+    <h2 class="addr">123 Banana Street</h2>
+    <div class="meta">Carmel, IN 46032 · 4 bed · 3 bath · 3,120 sq ft</div>
+    <div class="price">$612,000</div>
+    <div class="pricelab">List price</div>
+
+    <div class="sec">
+      <div class="sechead"><span class="sectitle">Where you are</span></div>
+      <p class="why">Tap any step to see exactly what happens and what you need to have ready.</p>
+
+      <div class="step done" onclick="tog(this)"><div class="dot">&#10003;</div><div><div class="lab">Pricing and prep</div><div class="sub">Done July 9</div></div></div>
+      <div class="detail">We walked the house, looked at every comparable sale in your neighborhood, and set a price meant to sell, not to flatter. I gave you the punch list of what was worth fixing and what was not.</div>
+
+      <div class="step done" onclick="tog(this)"><div class="dot">&#10003;</div><div><div class="lab">Photos and launch prep</div><div class="sub">Done July 18</div></div></div>
+      <div class="detail">Professional photos, floor plan, and the listing copy. Nothing goes live until it looks the way it should, because the first week gets the most eyes it will ever get.</div>
+
+      <div class="step now" onclick="tog(this)"><div class="dot">2</div><div><div class="lab">Live on market</div><div class="sub">You are here, day 11</div></div><span class="chev">&#9662;</span></div>
+      <div class="detail"><b>So far:</b> 9 showings, 1 open house, 340 online saves.<br><br><b>What I am doing:</b> following up with every agent who showed it, and watching the two homes near you that just listed.<br><br><b>What I need from you:</b> keep it show ready. I will always give you as much notice as I can get.</div>
+
+      <div class="step" onclick="tog(this)"><div class="dot">3</div><div><div class="lab">Offer and negotiation</div><div class="sub">Next up</div></div></div>
+      <div class="detail">When an offer comes in you see the whole thing, not just the price. I show you what you actually net on each one side by side, because the highest number is not always the best deal.</div>
+
+      <div class="step" onclick="tog(this)"><div class="dot">4</div><div><div class="lab">Inspection and appraisal</div><div class="sub">After we accept</div></div></div>
+      <div class="detail">The buyer will ask for repairs. I tell you which requests are reasonable and which are a negotiation tactic, and I hold the line where it is worth holding.</div>
+
+      <div class="step" onclick="tog(this)"><div class="dot">5</div><div><div class="lab">Clear to close</div><div class="sub">Then you hand over keys</div></div></div>
+      <div class="detail">You see the settlement statement before closing day so there are no surprises about your net. Then we close and you are done.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sechead"><span class="sectitle">Your dates</span></div>
+      <p class="why">Every deadline that matters, counting down. You never have to ask what is next.</p>
+      <div class="date"><div><div class="dlab">Showing</div><div class="dsub">4:30pm, buyer agent confirmed</div></div><span class="count today">Today</span></div>
+      <div class="date"><div><div class="dlab">Open house</div><div class="dsub">Sunday, 1 to 3</div></div><span class="count soon">In 3 days</span></div>
+      <div class="date"><div><div class="dlab">Price check in</div><div class="dsub">We look at the data together</div></div><span class="count">In 10 days</span></div>
+      <div class="date"><div><div class="dlab">Listing expires</div><div class="dsub">We will talk long before this</div></div><span class="count">In 78 days</span></div>
+    </div>
+
+    <div class="sec">
+      <div class="sechead"><span class="sectitle">Updates</span></div>
+      <p class="why">Showing feedback and market notes, written down instead of lost in a phone call.</p>
+      <div class="upd"><h4>Feedback from Tuesday's showing</h4><p>Buyers loved the kitchen and the lot. Their hesitation was the basement finish level. Second showing of that pair, which usually means something.</p><div class="when">Yesterday</div></div>
+      <div class="upd"><h4>New competition on your street</h4><p>A home two streets over listed at $598,000. Smaller and no garage update. I do not think we move on price yet, but I wanted you to hear it from me first.</p><div class="when">3 days ago</div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sechead"><span class="sectitle">Documents</span></div>
+      <p class="why">Everything you have signed, in one place, forever. No digging through email.</p>
+      <div class="doc"><div class="docicon">PDF</div><div><div class="docname">Listing agreement</div><div class="docsub">Signed July 9</div></div></div>
+      <div class="doc"><div class="docicon">PDF</div><div><div class="docname">Seller disclosure</div><div class="docsub">Signed July 16</div></div></div>
+      <div class="doc"><div class="docicon">PDF</div><div><div class="docname">Comparable sales report</div><div class="docsub">Added July 9</div></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sechead"><span class="sectitle">After you close</span></div>
+      <p class="why">The portal does not go away when the deal does. It becomes where you watch your equity.</p>
+      <div class="eq">
+        <div class="lab">Your equity</div>
+        <div class="big">$247,400</div>
+        <div class="bar"><i class="own" style="width:41%"></i><i class="loan" style="width:59%"></i></div>
+        <div class="legend"><span><b>41%</b> yours</span><span><b>59%</b> financed</span></div>
+        <div class="note" style="margin-top:12px">Sample numbers. Yours update as you pay down and the market moves.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- shared -->
+  <div class="sec">
+    <div class="sechead"><span class="sectitle">Reach me</span></div>
+    <p class="why">One tap. No phone tree, no assistant, no waiting on a callback.</p>
+    <div class="acts">
+      <div class="act"><div class="ic">&#128172;</div><div class="al">Text Carson</div></div>
+      <div class="act"><div class="ic">&#128222;</div><div class="al">Call Carson</div></div>
+      <div class="act"><div class="ic">&#127968;</div><div class="al">Request a showing</div></div>
+      <div class="act"><div class="ic">&#10067;</div><div class="al">Ask a question</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sechead"><span class="sectitle">How you get in</span></div>
+    <p class="why">No password to forget. Ever.</p>
+    <div class="upd">
+      <h4>Your email, then a 6 digit code</h4>
+      <p>I send the invite, you enter your email, a code arrives, you are in. Add it to your home screen and it opens like an app. You and your spouse can each have your own login on the same home.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="fr">Carson Calin</div>
+    <p>Livindy Realty, eXp Realty<br>(317) 903 5973 · portal.carsoncalin.com</p>
+  </div>
+</div>
+
+<script>
+function show(which){
+  var buy = which === 'buy';
+  document.getElementById('buy').classList.toggle('hide', !buy);
+  document.getElementById('sell').classList.toggle('hide', buy);
+  document.getElementById('bBuy').classList.toggle('on', buy);
+  document.getElementById('bSell').classList.toggle('on', !buy);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function tog(el){
+  var wasOpen = el.classList.contains('open');
+  var parent = el.parentNode;
+  parent.querySelectorAll('.step.open').forEach(function(s){ s.classList.remove('open'); });
+  if(!wasOpen) el.classList.add('open');
+}
+// open the current step on load so the page never looks static
+document.querySelectorAll('.step.now').forEach(function(s){ s.classList.add('open'); });
+</script>
+</body>
+</html>
