@@ -122,7 +122,8 @@
   .owedrow .who span{font-size:12.5px;color:var(--ink-soft)}
   .owedrow .who span.late{color:var(--red);font-weight:600}
 
-  /* per person detail level control */
+  /* per person name and detail level controls */
+  input.pname{margin-top:8px;max-width:280px}
   .lvlseg{display:flex;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:4px;margin-top:8px;max-width:280px}
   .lvlseg button{flex:1;min-height:38px;border:0;background:transparent;font-family:inherit;font-weight:600;
     font-size:13px;color:var(--ink-soft);border-radius:8px;cursor:pointer;transition:.15s}
@@ -533,6 +534,14 @@
       status='<span style="color:var(--ink-soft)">Not set. They will see everything until they choose.</span>';
     }
 
+    /* Carson can set what to call this person, since client_name is shared by
+       both of them and an email like fdraven3 is no use as a label. Same
+       ownership rule as the detail level: the moment they choose for
+       themselves, this becomes read only. */
+    const nameField = theirs ? "" :
+      '<input class="pname" data-email="'+esc(e)+'" placeholder="What to call them, e.g. Fenn" value="'
+      + esc((p && p.display_name) || "") + '">';
+
     const seg = theirs ? "" :
       '<div class="lvlseg" data-email="'+esc(e)+'">'
       + '<button type="button" data-v="headlines"'+(level==="headlines"?' class="on"':'')+'>Headlines</button>'
@@ -540,7 +549,7 @@
       + '</div>';
 
     return '<div style="margin-bottom:14px"><b style="font-weight:600">'+esc(email)+'</b><br>'
-      + seenLine + '<br>' + status + seg + '</div>';
+      + seenLine + '<br>' + status + nameField + seg + '</div>';
   }
   function renderPrefsView(){
     const html=prefLine($("f_email").value)+prefLine($("f_email2").value);
@@ -548,6 +557,18 @@
     $("prefsView").querySelectorAll(".lvlseg button").forEach(b=>{
       b.onclick=()=>setDetailLevel(b.closest(".lvlseg").dataset.email, b.dataset.v);
     });
+    $("prefsView").querySelectorAll("input.pname").forEach(inp=>{
+      inp.onchange=()=>setDisplayName(inp.dataset.email, inp.value);
+    });
+  }
+  async function setDisplayName(email, name){
+    const clean=(name||"").trim();
+    const row={ email:email, display_name:clean||null, set_by_client:false };
+    const { error } = await sb.from("preferences").upsert(row, { onConflict:"email" });
+    if(error){ toast("Could not save that name: "+error.message); return; }
+    prefsByEmail[email]=Object.assign({}, prefsByEmail[email]||{}, row);
+    renderList();
+    toast(clean ? "They will be called "+clean : "Name cleared");
   }
   async function setDetailLevel(email, level){
     const row={ email:email, detail_level:level, set_by_client:false };
@@ -569,8 +590,10 @@
       /* visits already records who opened it, not just which deal, so per
          person history needs no new table. Newest first, so the first hit
          for each key is the most recent. */
-      const { data:vs } = await sb.from("visits").select("client_id,email,seen_at").order("seen_at",{ascending:false}).limit(2000);
+      const { data:vs } = await sb.from("visits").select("client_id,email,seen_at")
+        .order("seen_at",{ascending:false,nullsFirst:false}).limit(2000);
       (vs||[]).forEach(v=>{
+        if(!v.seen_at) return;   /* a row with no timestamp tells us nothing */
         if(v.client_id && !lastSeen[v.client_id]) lastSeen[v.client_id]=v.seen_at;
         const e=(v.email||"").trim().toLowerCase();
         if(e && !lastSeenByEmail[e]) lastSeenByEmail[e]=v.seen_at;

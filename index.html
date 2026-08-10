@@ -1508,7 +1508,15 @@
     $("meEmail").textContent = email;
     $("portalFoot").style.display = "block";
     $("signOutLink").onclick = async (e)=>{ e.preventDefault(); await sb.auth.signOut(); location.reload(); };
-    try{ rows.forEach(r=>sb.from("visits").insert({ client_id:r.id, email:email })); }catch(e){}
+    /* Log the visit with an explicit timestamp. If the column has no default
+       every row lands with a null seen_at, which reads as "never opened" no
+       matter how many times someone signs in. Awaited so a failure is not
+       swallowed silently the way a bare fire and forget insert would be. */
+    try{
+      const stamp=new Date().toISOString();
+      const res=await sb.from("visits").insert(rows.map(r=>({ client_id:r.id, email:email, seen_at:stamp })));
+      if(res && res.error) console.warn("visit not recorded:", res.error.message);
+    }catch(e){ console.warn("visit not recorded:", e && e.message); }
     /* once, after they are actually looking at their portal */
     setTimeout(maybeShowInstallTip, 1500);
   }
